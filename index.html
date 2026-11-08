@@ -22,6 +22,8 @@
     --warn: oklch(56% 0.16 45);
     --danger: oklch(52% 0.17 25);
     --danger-tint: oklch(94% 0.03 25);
+    --wochenende-bg: oklch(32% 0.012 255);
+    --wochenende-ink: oklch(95% 0.006 255);
     --shadow: 0 1px 2px oklch(23% 0.012 255 / 0.06), 0 6px 20px oklch(23% 0.012 255 / 0.07);
     --radius: 10px;
     --serif: 'Source Serif 4', Georgia, serif;
@@ -233,9 +235,17 @@
   .kalender-tag { background: var(--bg); min-height: 92px; padding: 6px; display: flex; flex-direction: column; gap: 4px; position: relative; }
   .kalender-tag.leer { background: var(--surface); }
   .kalender-tag.ferien { background: var(--surface-2); }
+  .kalender-tag.wochenende { background: var(--wochenende-bg); }
+  .kalender-tag.wochenende.ferien { background: color-mix(in oklch, var(--wochenende-bg), black 15%); }
+  .kalender-tag.leer.wochenende { background: color-mix(in oklch, var(--wochenende-bg), var(--surface) 40%); }
+  .kalender-tag.wochenende .tagnummer, .kalender-tag.wochenende .ferien-label { color: var(--wochenende-ink); }
   .kalender-tag.heute .tagnummer { background: var(--accent); color: var(--accent-ink); border-radius: 999px; padding: 0 6px; }
   .tagnummer { font-size: 0.78rem; font-weight: 600; align-self: flex-start; }
   .ferien-label { font-size: 0.64rem; color: var(--muted); line-height: 1.2; }
+  .kalender-woche-info {
+    grid-column: 1 / -1; background: var(--surface); padding: 5px 12px; font-size: 0.74rem; font-weight: 600;
+    color: var(--muted); text-align: right;
+  }
   .termin-chip {
     font-family: var(--sans); font-size: 0.66rem; line-height: 1.25; text-align: left; background: var(--accent-tint); color: var(--accent);
     border: none; border-radius: 6px; padding: 3px 5px; cursor: pointer; font-weight: 600;
@@ -475,6 +485,28 @@
   var MONATSNAMEN = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
   var WOCHENTAGE = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 
+  function datumZuIso(d) {
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+
+  function tageDiff(isoVon, isoBis) {
+    var a = new Date(isoVon + "T00:00:00"), b = new Date(isoBis + "T00:00:00");
+    return Math.round((b - a) / 86400000);
+  }
+
+  function naechsteFerienInfo(iso) {
+    var aktuell = ferienAmTag(iso);
+    if (aktuell) {
+      var tageBisEnde = tageDiff(iso, aktuell.ende);
+      if (tageBisEnde <= 0) return null;
+      return aktuell.name + " – noch " + tageBisEnde + (tageBisEnde === 1 ? " Tag" : " Tage");
+    }
+    var kommende = BAYERN_FERIEN.filter(function (f) { return f.start > iso; }).sort(function (a, b) { return a.start < b.start ? -1 : 1; })[0];
+    if (!kommende) return null;
+    var tage = tageDiff(iso, kommende.start);
+    return "noch " + tage + (tage === 1 ? " Tag" : " Tage") + " bis " + kommende.name;
+  }
+
   function renderKalender() {
     var jahr = ui.kalenderJahr, monat = ui.kalenderMonat;
     var ersterTag = new Date(jahr, monat, 1);
@@ -492,25 +524,43 @@
     html += '<div class="kalender-grid-wrap"><div class="kalender-grid">';
     WOCHENTAGE.forEach(function (w) { html += '<div class="kalender-wochentag">' + w + '</div>'; });
 
-    for (var i = 0; i < startOffset; i++) html += '<div class="kalender-tag leer"></div>';
+    var gridStart = new Date(jahr, monat, 1 - startOffset);
+    var gridEndeExklusiv = new Date(jahr, monat, anzahlTage + 1);
+    var restTage = (7 - (((gridEndeExklusiv - gridStart) / 86400000) % 7)) % 7;
+    var gesamtZellen = Math.round((gridEndeExklusiv - gridStart) / 86400000) + restTage;
 
-    for (var tag = 1; tag <= anzahlTage; tag++) {
-      var iso = jahr + "-" + String(monat + 1).padStart(2, "0") + "-" + String(tag).padStart(2, "0");
-      var ferien = ferienAmTag(iso);
-      var istHeute = iso === heuteIso();
-      var termine = alleLnws.filter(function (e) { return e.lnw.datum === iso; });
-      html += '<div class="kalender-tag' + (ferien ? ' ferien' : '') + (istHeute ? ' heute' : '') + '" data-tag="' + iso + '">' +
-        '<span class="tagnummer">' + tag + '</span>' +
-        (ferien ? '<span class="ferien-label">' + escapeHtml(ferien.name) + '</span>' : '') +
-        termine.map(function (e) {
-          return '<button class="termin-chip" data-termin-klasse="' + e.klasse.id + '" data-termin-fach="' + e.fach.id + '">' +
-            escapeHtml(e.klasse.name) + ' · ' + escapeHtml(e.fach.name) + '<br>' + escapeHtml(e.typName) + '</button>';
-        }).join("") +
-        '<button class="tag-plus druck-ausblenden" data-tag-plus="' + iso + '" title="Leistungsnachweis planen">+</button>' +
-        '</div>';
+    for (var i = 0; i < gesamtZellen; i++) {
+      var datum = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i);
+      var iso = datumZuIso(datum);
+      var imMonat = datum.getMonth() === monat;
+      var wochentagIdx = i % 7; // 0 = Montag ... 5 = Samstag, 6 = Sonntag
+      var istWochenende = wochentagIdx === 5 || wochentagIdx === 6;
+
+      if (!imMonat) {
+        html += '<div class="kalender-tag leer' + (istWochenende ? ' wochenende' : '') + '"></div>';
+      } else {
+        var ferien = ferienAmTag(iso);
+        var istHeute = iso === heuteIso();
+        var termine = alleLnws.filter(function (e) { return e.lnw.datum === iso; });
+        html += '<div class="kalender-tag' + (ferien ? ' ferien' : '') + (istHeute ? ' heute' : '') + (istWochenende ? ' wochenende' : '') + '" data-tag="' + iso + '">' +
+          '<span class="tagnummer">' + datum.getDate() + '</span>' +
+          (ferien ? '<span class="ferien-label">' + escapeHtml(ferien.name) + '</span>' : '') +
+          termine.map(function (e) {
+            return '<button class="termin-chip" data-termin-klasse="' + e.klasse.id + '" data-termin-fach="' + e.fach.id + '">' +
+              escapeHtml(e.klasse.name) + ' · ' + escapeHtml(e.fach.name) + '<br>' + escapeHtml(e.typName) + '</button>';
+          }).join("") +
+          '<button class="tag-plus druck-ausblenden" data-tag-plus="' + iso + '" title="Leistungsnachweis planen">+</button>' +
+          '</div>';
+      }
+
+      if (wochentagIdx === 6) {
+        var montagDatum = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i - 6);
+        var info = naechsteFerienInfo(datumZuIso(montagDatum));
+        html += '<div class="kalender-woche-info">' + (info ? escapeHtml(info) : "") + '</div>';
+      }
     }
     html += '</div></div>';
-    html += '<p class="kalender-hinweis druck-ausblenden">Bayerische Schulferien grau hinterlegt. Auf ein Datum klicken, um einen Leistungsnachweis zu planen, oder auf einen vorhandenen Termin, um direkt zu den Noten zu springen.</p>';
+    html += '<p class="kalender-hinweis druck-ausblenden">Bayerische Schulferien grau hinterlegt, Samstag/Sonntag dunkelgrau. Am Ende jeder Woche steht, wie viele Tage noch bis zu den nächsten Ferien sind. Auf ein Datum klicken, um einen Leistungsnachweis zu planen, oder auf einen vorhandenen Termin, um direkt zu den Noten zu springen.</p>';
     return html;
   }
 
