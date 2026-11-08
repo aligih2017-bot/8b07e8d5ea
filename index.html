@@ -1,0 +1,879 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Notenbuch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: oklch(98.2% 0.003 250);
+    --surface: oklch(96.2% 0.004 250);
+    --surface-2: oklch(93.5% 0.005 250);
+    --ink: oklch(23% 0.012 255);
+    --muted: oklch(44% 0.012 255);
+    --border: oklch(87% 0.007 250);
+    --accent: oklch(47% 0.12 215);
+    --accent-ink: oklch(97% 0.01 215);
+    --accent-tint: oklch(93% 0.03 215);
+    --ok: oklch(52% 0.13 150);
+    --warn: oklch(56% 0.16 45);
+    --danger: oklch(52% 0.17 25);
+    --danger-tint: oklch(94% 0.03 25);
+    --shadow: 0 1px 2px oklch(23% 0.012 255 / 0.06), 0 6px 20px oklch(23% 0.012 255 / 0.07);
+    --radius: 10px;
+    --serif: 'Source Serif 4', Georgia, serif;
+    --sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: oklch(20% 0.009 255);
+      --surface: oklch(24% 0.01 255);
+      --surface-2: oklch(28% 0.011 255);
+      --ink: oklch(94% 0.006 255);
+      --muted: oklch(68% 0.012 255);
+      --border: oklch(34% 0.012 255);
+      --accent: oklch(72% 0.11 210);
+      --accent-ink: oklch(16% 0.02 210);
+      --accent-tint: oklch(30% 0.05 210);
+      --ok: oklch(70% 0.14 150);
+      --warn: oklch(74% 0.14 80);
+      --danger: oklch(72% 0.15 25);
+      --danger-tint: oklch(32% 0.07 25);
+      --shadow: 0 1px 2px oklch(0% 0 0 / 0.3), 0 10px 30px oklch(0% 0 0 / 0.35);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: oklch(20% 0.009 255); --surface: oklch(24% 0.01 255); --surface-2: oklch(28% 0.011 255);
+    --ink: oklch(94% 0.006 255); --muted: oklch(68% 0.012 255); --border: oklch(34% 0.012 255);
+    --accent: oklch(72% 0.11 210); --accent-ink: oklch(16% 0.02 210); --accent-tint: oklch(30% 0.05 210);
+    --ok: oklch(70% 0.14 150); --warn: oklch(74% 0.14 80); --danger: oklch(72% 0.15 25); --danger-tint: oklch(32% 0.07 25);
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { font-family: var(--serif); font-weight: 700; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+  p { margin: 0; }
+  button { font-family: var(--sans); }
+  ::selection { background: var(--accent-tint); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .panel-enter { animation: fadeUp .38s cubic-bezier(.22,.9,.3,1) both; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .tab-panel { animation: fade .22s ease both; }
+    @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  }
+
+  .shell { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+  @media (max-width: 860px) { .shell { grid-template-columns: 1fr; } }
+
+  .sidebar {
+    border-right: 1px solid var(--border); background: var(--surface); padding: 20px 16px;
+    display: flex; flex-direction: column; gap: 16px; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  }
+  @media (max-width: 860px) {
+    .sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); flex-direction: row; align-items: center; overflow-x: auto; padding: 14px 16px; }
+    .sidebar .brand { display: none; }
+    .sidebar .klassen-liste { display: flex; flex-direction: row; gap: 8px; flex: 1; }
+    .sidebar .neue-klasse-btn { flex: 0 0 auto; }
+  }
+  .brand { font-family: var(--serif); font-size: 1.3rem; font-weight: 700; padding: 0 4px; }
+  .brand span { color: var(--accent); }
+  .klassen-liste { display: flex; flex-direction: column; gap: 3px; }
+  .klasse-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 12px; border-radius: 8px;
+    cursor: pointer; border: 1px solid transparent; font-size: 0.92rem; font-weight: 500; white-space: nowrap;
+  }
+  .klasse-item:hover { background: var(--surface-2); }
+  .klasse-item.aktiv { background: var(--accent-tint); color: var(--accent); border-color: var(--accent-tint); }
+  .klasse-item .anzahl { color: var(--muted); font-size: 0.8rem; font-weight: 400; }
+  .klasse-item.aktiv .anzahl { color: var(--accent); opacity: 0.75; }
+  .neue-klasse-btn {
+    margin-top: 4px; padding: 9px 12px; border-radius: 8px; border: 1.5px dashed var(--border); background: none;
+    color: var(--muted); font-size: 0.88rem; cursor: pointer; text-align: left; font-weight: 500;
+  }
+  .neue-klasse-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .sidebar-footer { margin-top: auto; display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--border); }
+  @media (max-width: 860px) { .sidebar-footer { display: none; } }
+  .text-btn {
+    background: none; border: none; color: var(--muted); font-size: 0.82rem; text-align: left; cursor: pointer; padding: 6px 4px;
+    border-radius: 6px;
+  }
+  .text-btn:hover { color: var(--ink); background: var(--surface-2); }
+
+  .main { padding: 28px 32px 64px; min-width: 0; }
+  @media (max-width: 860px) { .main { padding: 20px 16px 48px; } }
+  .main-inner { max-width: 1100px; margin: 0 auto; }
+
+  .leer-zustand { text-align: center; padding: 80px 20px; color: var(--muted); }
+  .leer-zustand h2 { color: var(--ink); margin-bottom: 8px; font-size: 1.4rem; }
+  .leer-zustand p { max-width: 42ch; margin: 0 auto 20px; line-height: 1.55; }
+
+  .klasse-kopf { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 4px; flex-wrap: wrap; }
+  .klasse-kopf h1 { font-size: 2rem; }
+  .klasse-kopf-aktionen { display: flex; gap: 8px; }
+  .meta-zeile { color: var(--muted); font-size: 0.9rem; margin-bottom: 22px; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 8px; font-size: 0.88rem;
+    font-weight: 600; cursor: pointer; border: 1.5px solid transparent; font-family: var(--sans);
+    transition: transform .15s cubic-bezier(.22,.9,.3,1), background .15s, border-color .15s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); }
+  .btn-primary:hover { filter: brightness(1.07); }
+  .btn-ghost { background: none; border-color: var(--border); color: var(--ink); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger-ghost { background: none; border-color: var(--border); color: var(--danger); }
+  .btn-danger-ghost:hover { border-color: var(--danger); background: var(--danger-tint); }
+  .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .faecher-leiste { display: flex; gap: 6px; border-bottom: 1px solid var(--border); margin-bottom: 24px; flex-wrap: wrap; align-items: flex-end; }
+  .fach-tab {
+    padding: 10px 16px; border: none; background: none; cursor: pointer; font-size: 0.92rem; font-weight: 600;
+    color: var(--muted); border-bottom: 2.5px solid transparent; margin-bottom: -1px; display: flex; flex-direction: column; gap: 2px;
+  }
+  .fach-tab .schnitt-badge { font-size: 0.72rem; font-weight: 500; color: var(--muted); }
+  .fach-tab.aktiv { color: var(--ink); border-bottom-color: var(--accent); }
+  .fach-tab.aktiv .schnitt-badge { color: var(--accent); }
+  .fach-tab-neu { padding: 10px 14px; border: none; background: none; cursor: pointer; color: var(--muted); font-size: 1.1rem; margin-bottom: -1px; }
+  .fach-tab-neu:hover { color: var(--accent); }
+
+  .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  .toolbar-aktionen { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .tabellen-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+  table.notentabelle { border-collapse: collapse; width: 100%; font-size: 0.86rem; }
+  table.notentabelle th, table.notentabelle td { padding: 9px 12px; text-align: center; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  table.notentabelle thead th { font-weight: 600; vertical-align: bottom; background: var(--surface); position: sticky; top: 0; z-index: 2; }
+  table.notentabelle th.schueler-col, table.notentabelle td.schueler-col {
+    text-align: left; position: sticky; left: 0; background: var(--surface); z-index: 3; border-right: 1px solid var(--border); font-weight: 500;
+    min-width: 160px;
+  }
+  table.notentabelle thead th.schueler-col { z-index: 4; }
+  table.notentabelle tbody tr:hover td { background: var(--surface-2); }
+  table.notentabelle tbody tr:hover td.schueler-col { background: var(--surface-2); }
+  table.notentabelle td.schnitt-col, table.notentabelle th.schnitt-col { font-weight: 700; background: var(--accent-tint); color: var(--accent); }
+  table.notentabelle tfoot td { font-weight: 700; background: var(--surface-2); border-top: 2px solid var(--border); border-bottom: none; }
+  .lnw-head { display: flex; flex-direction: column; gap: 2px; align-items: center; min-width: 88px; }
+  .lnw-head .nr { color: var(--muted); font-weight: 500; font-size: 0.74rem; }
+  .lnw-head .typ { font-weight: 600; }
+  .lnw-head .zusatz { color: var(--muted); font-weight: 400; font-size: 0.74rem; }
+  .lnw-head-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.72rem; padding: 2px 6px; border-radius: 5px; }
+  .lnw-head-btn:hover { color: var(--danger); background: var(--danger-tint); }
+
+  select.noten-select {
+    width: 62px; padding: 5px 2px; border-radius: 6px; border: 1.5px solid var(--border); background: var(--bg); color: var(--ink);
+    font-family: var(--sans); font-size: 0.86rem; text-align: center; cursor: pointer;
+  }
+  select.noten-select:focus { outline: none; border-color: var(--accent); }
+
+  .leeres-fach { padding: 48px 20px; text-align: center; color: var(--muted); }
+  .leeres-fach p { max-width: 40ch; margin: 0 auto 16px; line-height: 1.55; }
+
+  dialog { border: none; border-radius: 14px; padding: 0; background: var(--bg); color: var(--ink); box-shadow: var(--shadow); max-width: 480px; width: 92vw; }
+  dialog::backdrop { background: oklch(10% 0 0 / 0.42); backdrop-filter: blur(2px); }
+  .dialog-inner { padding: 24px; }
+  .dialog-inner h2 { font-size: 1.25rem; margin-bottom: 18px; }
+  .feld { margin-bottom: 14px; }
+  .feld label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--muted); margin-bottom: 5px; }
+  .feld input[type="text"], .feld input[type="number"], .feld input[type="date"], .feld select, .feld textarea {
+    width: 100%; padding: 9px 11px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--surface);
+    color: var(--ink); font-family: var(--sans); font-size: 0.92rem;
+  }
+  .feld textarea { min-height: 90px; resize: vertical; font-family: var(--sans); }
+  .feld input:focus, .feld select:focus, .feld textarea:focus { outline: none; border-color: var(--accent); }
+  .gewicht-picks { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .gewicht-pick {
+    padding: 6px 12px; border-radius: 999px; border: 1.5px solid var(--border); background: none; color: var(--ink);
+    font-size: 0.82rem; cursor: pointer; font-weight: 600;
+  }
+  .gewicht-pick.aktiv { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .dialog-aktionen { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+  .typen-liste { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; max-height: 260px; overflow-y: auto; }
+  .typen-zeile { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; }
+  .typen-zeile .name { flex: 1; font-weight: 500; font-size: 0.9rem; }
+  .typen-zeile .gewicht { color: var(--muted); font-size: 0.82rem; font-variant-numeric: tabular-nums; }
+  .typen-zeile button { background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px 6px; border-radius: 6px; font-size: 0.8rem; }
+  .typen-zeile button:hover { color: var(--danger); background: var(--danger-tint); }
+
+  .schueler-liste-edit { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; max-height: 320px; overflow-y: auto; }
+  .schueler-zeile-edit { display: flex; gap: 8px; align-items: center; }
+  .schueler-zeile-edit input { flex: 1; }
+  .schueler-zeile-edit button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.85rem; padding: 6px; }
+  .schueler-zeile-edit button:hover { color: var(--danger); }
+
+  .fuss-leiste { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+  .nur-druck { display: none; }
+  @media print {
+    .sidebar, .toolbar-aktionen, .fach-tab-neu, .lnw-head-btn, .fuss-leiste, .klasse-kopf-aktionen, .druck-ausblenden { display: none !important; }
+    .nur-druck { display: block; margin-bottom: 16px; font-size: 1.3rem; }
+    .shell { display: block; }
+    .main { padding: 0; }
+    body { background: #fff; color: #000; }
+    table.notentabelle th.schueler-col, table.notentabelle td.schueler-col { position: static; }
+    table.notentabelle thead th { position: static; }
+    .tabellen-wrap { border: none; }
+    select.noten-select { border: none; appearance: none; background: none; }
+    @page { size: landscape; margin: 14mm; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function () {
+  "use strict";
+
+  var SPEICHER_KEY = "notenbuch-v1";
+
+  var NOTEN_OPTIONEN = ["1+","1","1-","2+","2","2-","3+","3","3-","4+","4","4-","5+","5","5-","6"];
+  var NOTEN_ZAHL = {};
+  NOTEN_OPTIONEN.forEach(function (label) {
+    var basis = parseInt(label[0], 10);
+    var tendenz = label.length > 1 ? label[1] : null;
+    var zahl = basis;
+    if (tendenz === "+") zahl = basis - 1 / 3;
+    if (tendenz === "-") zahl = basis + 1 / 3;
+    NOTEN_ZAHL[label] = zahl;
+  });
+
+  var GEWICHT_PRESETS = [
+    { label: "⅓", wert: 1 / 3 },
+    { label: "½", wert: 0.5 },
+    { label: "1", wert: 1 },
+    { label: "2", wert: 2 }
+  ];
+
+  var STANDARD_LNW_TYPEN = [
+    { name: "Großer LNW", gewicht: 2 },
+    { name: "Kleiner LNW", gewicht: 1 },
+    { name: "Vokabeltest", gewicht: 1 / 3 },
+    { name: "Referat", gewicht: 1 },
+    { name: "Gruppenarbeit", gewicht: 1 },
+    { name: "Präsentation", gewicht: 1 },
+    { name: "Vortrag", gewicht: 1 },
+    { name: "Kunstwerk", gewicht: 1 },
+    { name: "Lapbook", gewicht: 1 },
+    { name: "Plakat", gewicht: 1 }
+  ];
+
+  function neueId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+
+  function ladeZustand() {
+    try {
+      var roh = localStorage.getItem(SPEICHER_KEY);
+      if (roh) return JSON.parse(roh);
+    } catch (e) {}
+    return { klassen: [] };
+  }
+
+  function speichereZustand() {
+    try { localStorage.setItem(SPEICHER_KEY, JSON.stringify(zustand)); } catch (e) {}
+  }
+
+  var zustand = ladeZustand();
+  var ui = { klasseId: null, fachId: null };
+
+  function findeKlasse(id) {
+    for (var i = 0; i < zustand.klassen.length; i++) { if (zustand.klassen[i].id === id) return zustand.klassen[i]; }
+    return null;
+  }
+  function findeFach(klasse, id) {
+    if (!klasse) return null;
+    for (var i = 0; i < klasse.faecher.length; i++) { if (klasse.faecher[i].id === id) return klasse.faecher[i]; }
+    return null;
+  }
+
+  function formatSchnitt(wert) {
+    if (wert == null) return "–";
+    return wert.toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+  }
+
+  function formatGewicht(gewicht) {
+    var treffer = GEWICHT_PRESETS.filter(function (p) { return Math.abs(p.wert - gewicht) < 0.001; })[0];
+    if (treffer) return treffer.label + "×";
+    return (Math.round(gewicht * 100) / 100) + "×";
+  }
+
+  function schuelerSchnitt(fach, schuelerId) {
+    var summeProdukt = 0, summeGewicht = 0;
+    fach.lnws.forEach(function (lnw) {
+      var wert = lnw.noten[schuelerId];
+      if (wert == null || wert === "") return;
+      summeProdukt += NOTEN_ZAHL[wert] * lnw.gewicht;
+      summeGewicht += lnw.gewicht;
+    });
+    if (summeGewicht === 0) return null;
+    return summeProdukt / summeGewicht;
+  }
+
+  function lnwSchnitt(lnw, schuelerListe) {
+    var summe = 0, anzahl = 0;
+    schuelerListe.forEach(function (s) {
+      var wert = lnw.noten[s.id];
+      if (wert == null || wert === "") return;
+      summe += NOTEN_ZAHL[wert]; anzahl++;
+    });
+    if (anzahl === 0) return null;
+    return summe / anzahl;
+  }
+
+  function klassenDurchschnittFach(klasse, fach) {
+    var summe = 0, anzahl = 0;
+    klasse.schueler.forEach(function (s) {
+      var sc = schuelerSchnitt(fach, s.id);
+      if (sc == null) return;
+      summe += sc; anzahl++;
+    });
+    if (anzahl === 0) return null;
+    return summe / anzahl;
+  }
+
+  var app = document.getElementById("app");
+
+  function render() {
+    var klasse = findeKlasse(ui.klasseId);
+    var html = '<div class="shell">' + renderSidebar(klasse) + '<main class="main"><div class="main-inner panel-enter">';
+    if (!klasse) {
+      html += renderLeerZustand();
+    } else {
+      var fach = findeFach(klasse, ui.fachId);
+      html += renderKlasse(klasse, fach);
+    }
+    html += '<div class="fuss-leiste druck-ausblenden">' +
+      '<button class="text-btn" id="export-btn">Sicherung herunterladen</button>' +
+      '<button class="text-btn" id="import-btn">Sicherung einspielen</button>' +
+      '<input type="file" id="import-datei" accept="application/json" hidden>' +
+      '</div>';
+    html += '</div></main></div>';
+    app.innerHTML = html;
+    bindeEvents(klasse);
+  }
+
+  function renderSidebar(klasseAktiv) {
+    var liste = zustand.klassen.map(function (k) {
+      var aktiv = klasseAktiv && k.id === klasseAktiv.id;
+      return '<div class="klasse-item' + (aktiv ? ' aktiv' : '') + '" data-klasse-id="' + k.id + '">' +
+        '<span>' + escapeHtml(k.name) + '</span><span class="anzahl">' + k.schueler.length + '</span></div>';
+    }).join("");
+    return '<nav class="sidebar">' +
+      '<div class="brand">Noten<span>buch</span></div>' +
+      '<div class="klassen-liste">' + liste + '</div>' +
+      '<button class="neue-klasse-btn" id="neue-klasse-btn">+ Neue Klasse</button>' +
+      '<div class="sidebar-footer"></div>' +
+      '</nav>';
+  }
+
+  function renderLeerZustand() {
+    if (zustand.klassen.length === 0) {
+      return '<div class="leer-zustand"><h2>Noch keine Klasse angelegt</h2>' +
+        '<p>Leg deine erste Klasse an, trag die Namen deiner Schüler ein und verteil die Fächer, die du dort unterrichtest.</p>' +
+        '<button class="btn btn-primary" id="leer-neue-klasse-btn">+ Neue Klasse anlegen</button></div>';
+    }
+    return '<div class="leer-zustand"><h2>Wähle eine Klasse</h2><p>Wähle links eine Klasse aus, oder leg eine neue an.</p></div>';
+  }
+
+  function renderKlasse(klasse, fach) {
+    var html = '<div class="klasse-kopf"><h1>' + escapeHtml(klasse.name) + '</h1>' +
+      '<div class="klasse-kopf-aktionen druck-ausblenden">' +
+      '<button class="btn btn-ghost btn-sm" id="schueler-verwalten-btn">Schüler verwalten</button>' +
+      '<button class="btn btn-ghost btn-sm" id="klasse-umbenennen-btn">Umbenennen</button>' +
+      '<button class="btn btn-danger-ghost btn-sm" id="klasse-loeschen-btn">Löschen</button>' +
+      '</div></div>' +
+      '<p class="meta-zeile">' + klasse.schueler.length + ' Schüler' + (klasse.schueler.length === 1 ? '' : (klasse.schueler.length === 0 ? 'e' : '')) + (klasse.schueler.length !== 1 ? 'innen und Schüler' : '') + '</p>';
+
+    html += '<div class="faecher-leiste druck-ausblenden">';
+    klasse.faecher.forEach(function (f) {
+      var schnitt = klassenDurchschnittFach(klasse, f);
+      var aktiv = fach && f.id === fach.id;
+      html += '<button class="fach-tab' + (aktiv ? ' aktiv' : '') + '" data-fach-id="' + f.id + '">' +
+        '<span>' + escapeHtml(f.name) + '</span>' +
+        '<span class="schnitt-badge">Ø ' + formatSchnitt(schnitt) + '</span></button>';
+    });
+    html += '<button class="fach-tab-neu" id="neues-fach-btn" title="Neues Fach">+</button></div>';
+
+    if (!fach) {
+      if (klasse.faecher.length === 0) {
+        html += '<div class="leeres-fach"><p>Diese Klasse hat noch kein Fach. Leg ein Fach an, um Leistungsnachweise und Noten zu erfassen.</p>' +
+          '<button class="btn btn-primary" id="leeres-fach-neu-btn">+ Fach anlegen</button></div>';
+      }
+      return html;
+    }
+
+    html += '<div class="tab-panel">';
+    html += '<h2 class="nur-druck">' + escapeHtml(fach.name) + '</h2>';
+    html += '<div class="toolbar druck-ausblenden"><div class="toolbar-aktionen">' +
+      '<button class="btn btn-primary btn-sm" id="neuer-lnw-btn"' + (klasse.schueler.length === 0 ? ' disabled' : '') + '>+ Neuer Leistungsnachweis</button>' +
+      '<button class="btn btn-ghost btn-sm" id="typen-verwalten-btn">LNW-Typen verwalten</button>' +
+      '<button class="btn btn-ghost btn-sm" id="fach-umbenennen-btn">Fach umbenennen</button>' +
+      '<button class="btn btn-danger-ghost btn-sm" id="fach-loeschen-btn">Fach löschen</button>' +
+      '</div><button class="btn btn-ghost btn-sm" id="drucken-btn">Drucken</button></div>';
+
+    if (klasse.schueler.length === 0) {
+      html += '<div class="leeres-fach"><p>Trag zuerst Schüler in dieser Klasse ein, bevor du Noten erfassen kannst.</p>' +
+        '<button class="btn btn-primary" id="leeres-fach-schueler-btn">Schüler eintragen</button></div>';
+    } else if (fach.lnws.length === 0) {
+      html += '<div class="leeres-fach"><p>Noch kein Leistungsnachweis in ' + escapeHtml(fach.name) + '. Leg den ersten an.</p>' +
+        '<button class="btn btn-primary" id="leeres-fach-lnw-btn">+ Neuer Leistungsnachweis</button></div>';
+    } else {
+      html += renderNotentabelle(klasse, fach);
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function renderNotentabelle(klasse, fach) {
+    var html = '<div class="tabellen-wrap"><table class="notentabelle"><thead><tr><th class="schueler-col">Schüler</th>';
+    fach.lnws.forEach(function (lnw, i) {
+      var typ = fach.lnwTypen.filter(function (t) { return t.id === lnw.typId; })[0];
+      var typName = typ ? typ.name : "?";
+      html += '<th><div class="lnw-head">' +
+        '<span class="nr">' + (i + 1) + '. LNW</span>' +
+        '<span class="typ">' + escapeHtml(typName) + '</span>' +
+        '<span class="zusatz">' + (lnw.titel ? escapeHtml(lnw.titel) + " · " : "") + formatGewicht(lnw.gewicht) + (lnw.datum ? " · " + formatDatum(lnw.datum) : "") + '</span>' +
+        '<button class="lnw-head-btn druck-ausblenden" data-lnw-loeschen="' + lnw.id + '">Löschen</button>' +
+        '</div></th>';
+    });
+    html += '<th class="schnitt-col">Schnitt</th></tr></thead><tbody>';
+
+    klasse.schueler.forEach(function (s) {
+      html += '<tr><td class="schueler-col">' + escapeHtml(s.name) + '</td>';
+      fach.lnws.forEach(function (lnw) {
+        var wert = lnw.noten[s.id] || "";
+        html += '<td><select class="noten-select" data-lnw-id="' + lnw.id + '" data-schueler-id="' + s.id + '">' +
+          '<option value=""' + (wert === "" ? " selected" : "") + '>–</option>' +
+          NOTEN_OPTIONEN.map(function (n) { return '<option value="' + n + '"' + (wert === n ? " selected" : "") + '>' + n + '</option>'; }).join("") +
+          '</select></td>';
+      });
+      var schnitt = schuelerSchnitt(fach, s.id);
+      html += '<td class="schnitt-col">' + formatSchnitt(schnitt) + '</td></tr>';
+    });
+
+    html += '</tbody><tfoot><tr><td class="schueler-col">⌀ Klasse</td>';
+    fach.lnws.forEach(function (lnw) {
+      html += '<td>' + formatSchnitt(lnwSchnitt(lnw, klasse.schueler)) + '</td>';
+    });
+    html += '<td class="schnitt-col">' + formatSchnitt(klassenDurchschnittFach(klasse, fach)) + '</td></tr></tfoot>';
+    html += '</table></div>';
+    return html;
+  }
+
+  function formatDatum(iso) {
+    if (!iso) return "";
+    var teile = iso.split("-");
+    if (teile.length !== 3) return iso;
+    return teile[2] + "." + teile[1] + ".";
+  }
+
+  function escapeHtml(str) {
+    return String(str || "").replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  // ---------- Dialoge ----------
+
+  function oeffneDialog(innerHtml, onOpen) {
+    var alt = document.getElementById("app-dialog");
+    if (alt) alt.remove();
+    var dlg = document.createElement("dialog");
+    dlg.id = "app-dialog";
+    dlg.innerHTML = '<div class="dialog-inner">' + innerHtml + '</div>';
+    document.body.appendChild(dlg);
+    dlg.addEventListener("click", function (e) { if (e.target === dlg) dlg.close(); });
+    dlg.showModal();
+    if (onOpen) onOpen(dlg);
+    return dlg;
+  }
+
+  function dialogNeueKlasse() {
+    var dlg = oeffneDialog(
+      '<h2>Neue Klasse</h2>' +
+      '<div class="feld"><label for="d-klassenname">Klassenname</label><input type="text" id="d-klassenname" placeholder="z. B. 7a"></div>' +
+      '<div class="dialog-aktionen"><button class="btn btn-ghost" id="d-abbrechen">Abbrechen</button><button class="btn btn-primary" id="d-speichern">Anlegen</button></div>',
+      function (dlg) { dlg.querySelector("#d-klassenname").focus(); }
+    );
+    dlg.querySelector("#d-abbrechen").addEventListener("click", function () { dlg.close(); });
+    dlg.querySelector("#d-speichern").addEventListener("click", function () {
+      var name = dlg.querySelector("#d-klassenname").value.trim();
+      if (!name) return;
+      var neu = { id: neueId(), name: name, schueler: [], faecher: [] };
+      zustand.klassen.push(neu);
+      speichereZustand();
+      ui.klasseId = neu.id; ui.fachId = null;
+      dlg.close(); render();
+    });
+  }
+
+  function dialogKlasseUmbenennen(klasse) {
+    var dlg = oeffneDialog(
+      '<h2>Klasse umbenennen</h2>' +
+      '<div class="feld"><label for="d-klassenname">Klassenname</label><input type="text" id="d-klassenname" value="' + escapeHtml(klasse.name) + '"></div>' +
+      '<div class="dialog-aktionen"><button class="btn btn-ghost" id="d-abbrechen">Abbrechen</button><button class="btn btn-primary" id="d-speichern">Speichern</button></div>',
+      function (dlg) { var f = dlg.querySelector("#d-klassenname"); f.focus(); f.select(); }
+    );
+    dlg.querySelector("#d-abbrechen").addEventListener("click", function () { dlg.close(); });
+    dlg.querySelector("#d-speichern").addEventListener("click", function () {
+      var name = dlg.querySelector("#d-klassenname").value.trim();
+      if (!name) return;
+      klasse.name = name; speichereZustand(); dlg.close(); render();
+    });
+  }
+
+  function dialogKlasseLoeschen(klasse) {
+    var dlg = oeffneDialog(
+      '<h2>Klasse löschen?</h2><p style="color:var(--muted);line-height:1.5;">„' + escapeHtml(klasse.name) + '“ wird inklusive aller Schüler, Fächer und Noten unwiderruflich gelöscht.</p>' +
+      '<div class="dialog-aktionen"><button class="btn btn-ghost" id="d-abbrechen">Abbrechen</button><button class="btn" style="background:var(--danger);color:#fff;" id="d-loeschen">Endgültig löschen</button></div>'
+    );
+    dlg.querySelector("#d-abbrechen").addEventListener("click", function () { dlg.close(); });
+    dlg.querySelector("#d-loeschen").addEventListener("click", function () {
+      zustand.klassen = zustand.klassen.filter(function (k) { return k.id !== klasse.id; });
+      speichereZustand();
+      ui.klasseId = null; ui.fachId = null;
+      dlg.close(); render();
+    });
+  }
+
+  function dialogSchuelerVerwalten(klasse) {
+    function zeilenHtml() {
+      return klasse.schueler.map(function (s, i) {
+        return '<div class="schueler-zeile-edit" data-idx="' + i + '">' +
+          '<input type="text" value="' + escapeHtml(s.name) + '" data-schueler-id="' + s.id + '">' +
+          '<button data-entfernen="' + s.id + '" title="Entfernen">✕</button></div>';
+      }).join("");
+    }
+    var dlg = oeffneDialog(
+      '<h2>Schüler verwalten</h2>' +
+      '<div class="schueler-liste-edit" id="d-schueler-liste">' + zeilenHtml() + '</div>' +
+      '<button class="btn btn-ghost btn-sm" id="d-schueler-hinzufuegen" style="margin-bottom:16px;">+ Schüler hinzufügen</button>' +
+      '<div class="dialog-aktionen"><button class="btn btn-ghost" id="d-schliessen">Fertig</button></div>'
+    );
+
+    function bindeZeilen() {
+      dlg.querySelectorAll("[data-schueler-id]").forEach(function (input) {
+        input.addEventListener("change", function () {
+          var s = klasse.schueler.filter(function (x) { return x.id === input.getAttribute("data-schueler-id"); })[0];
+          if (s) { s.name = input.value.trim() || s.name; speichereZustand(); }
+        });
+      });
+      dlg.querySelectorAll("[data-entfernen]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var id = btn.getAttribute("data-entfernen");
+          klasse.schueler = klasse.schueler.filter(function (s) { return s.id !== id; });
+          klasse.faecher.forEach(function (f) {
+            f.lnws.forEach(function (lnw) { delete lnw.noten[id]; });
+          });
+          speichereZustand();
+          dlg.querySelector("#d-schueler-liste").innerHTML = zeilenHtml();
+          bindeZeilen();
+        });
+      });
+    }
+    bindeZeilen();
+
+    dlg.querySelector("#d-schueler-hinzufuegen").addEventListener("click", function () {
+      klasse.schueler.push({ id: neueId(), name: "" });
+      speichereZustand();
+      dlg.querySelector("#d-schueler-liste").innerHTML = zeilenHtml();
+      bindeZeilen();
+      var inputs = dlg.querySelectorAll("[data-schueler-id]");
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    });
+
+    dlg.querySelector("#d-schliessen").addEventListener("click", function () {
+      klasse.schueler = klasse.schueler.filter(function (s) { return s.name && s.name.trim(); });
+      speichereZustand();
+      dlg.close(); render();
+    });
+  }
+
+  function dialogNeuesFach(klasse) {
+    var dlg = oeffneDialog(
+      '<h2>Neues Fach</h2>' +
+      '<div class="feld"><label for="d-fachname">Fachname</label><input type="text" id="d-fachname" placeholder="z. B. Mathematik"></div>' +
+      '<p style="color:var(--muted);font-size:0.84rem;line-height:1.5;margin-bottom:4px;">Die üblichen Leistungsnachweis-Typen werden automatisch angelegt (anpassbar unter „LNW-Typen verwalten“).</p>' +
+      '<div class="dialog-aktionen"><button class="btn btn-ghost" id="d-abbrechen">Abbrechen</button><button class="btn btn-primary" id="d-speichern">Anlegen</button></div>',
+      function (dlg) { dlg.querySelector("#d-fachname").focus(); }
+    );
+    dlg.querySelector("#d-abbrechen").addEventListener("click", function () { dlg.close(); });
+    dlg.querySelector("#d-speichern").addEventListener("click", function () {
+      var name = dlg.querySelector("#d-fachname").value.trim();
+      if (!name) return;
+      var neu = {
+        id: neueId(), name: name,
+        lnwTypen: STANDARD_LNW_TYPEN.map(function (t) { return { id: neueId(), name: t.name, gewicht: t.gewicht }; }),
+        lnws: []
+      };
+      klasse.faecher.push(neu);
+      speichereZustand();
+      ui.fachId = neu.id;
+      dlg.close(); render();
+    });
+  }
+
+  function dialogFachUmbenennen(fach) {
+    var dlg = oeffneDialog(
+      '<h2>Fach umbenennen</h2>' +
+      '<div class="feld"><label for="d-fachname">Fachname</label><input type="text" id="d-fachname" value="' + escapeHtml(fach.name) + '"></div>' +
+      '<div class="dialog-aktionen"><button class="btn btn-ghost" id="d-abbrechen">Abbrechen</button><button class="btn btn-primary" id="d-speichern">Speichern</button></div>',
+      function (dlg) { var f = dlg.querySelector("#d-fachname"); f.focus(); f.select(); }
+    );
+    dlg.querySelector("#d-abbrechen").addEventListener("click", function () { dlg.close(); });
+    dlg.querySelector("#d-speichern").addEventListener("click", function () {
+      var name = dlg.querySelector("#d-fachname").value.trim();
+      if (!name) return;
+      fach.name = name; speichereZustand(); dlg.close(); render();
+    });
+  }
+
+  function dialogFachLoeschen(klasse, fach) {
+    var dlg = oeffneDialog(
+      '<h2>Fach löschen?</h2><p style="color:var(--muted);line-height:1.5;">„' + escapeHtml(fach.name) + '“ wird inklusive aller Leistungsnachweise und Noten unwiderruflich gelöscht.</p>' +
+      '<div class="dialog-aktionen"><button class="btn btn-ghost" id="d-abbrechen">Abbrechen</button><button class="btn" style="background:var(--danger);color:#fff;" id="d-loeschen">Endgültig löschen</button></div>'
+    );
+    dlg.querySelector("#d-abbrechen").addEventListener("click", function () { dlg.close(); });
+    dlg.querySelector("#d-loeschen").addEventListener("click", function () {
+      klasse.faecher = klasse.faecher.filter(function (f) { return f.id !== fach.id; });
+      speichereZustand();
+      ui.fachId = null;
+      dlg.close(); render();
+    });
+  }
+
+  function dialogTypenVerwalten(fach) {
+    function zeilenHtml() {
+      return fach.lnwTypen.map(function (t) {
+        return '<div class="typen-zeile"><span class="name">' + escapeHtml(t.name) + '</span>' +
+          '<span class="gewicht">' + formatGewicht(t.gewicht) + '</span>' +
+          '<button data-typ-loeschen="' + t.id + '">Entfernen</button></div>';
+      }).join("");
+    }
+    var dlg = oeffneDialog(
+      '<h2>LNW-Typen – ' + escapeHtml(fach.name) + '</h2>' +
+      '<div class="typen-liste" id="d-typen-liste">' + zeilenHtml() + '</div>' +
+      '<div class="feld"><label for="d-typ-name">Neuer Typ</label><input type="text" id="d-typ-name" placeholder="z. B. Hausaufgabe"></div>' +
+      '<div class="feld"><label>Gewichtung</label><div class="gewicht-picks" id="d-gewicht-picks">' +
+        GEWICHT_PRESETS.map(function (p, i) { return '<button type="button" class="gewicht-pick' + (i === 2 ? ' aktiv' : '') + '" data-gewicht="' + p.wert + '">' + p.label + '</button>'; }).join("") +
+      '</div><input type="number" id="d-gewicht-custom" step="0.01" placeholder="eigener Wert, z. B. 1.5"></div>' +
+      '<div class="dialog-aktionen"><button class="btn btn-ghost" id="d-schliessen">Fertig</button><button class="btn btn-primary" id="d-typ-anlegen">Typ hinzufügen</button></div>'
+    );
+
+    var gewaehltesGewicht = 1;
+    dlg.querySelectorAll("[data-gewicht]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        dlg.querySelectorAll("[data-gewicht]").forEach(function (b) { b.classList.remove("aktiv"); });
+        btn.classList.add("aktiv");
+        gewaehltesGewicht = parseFloat(btn.getAttribute("data-gewicht"));
+        dlg.querySelector("#d-gewicht-custom").value = "";
+      });
+    });
+    dlg.querySelector("#d-gewicht-custom").addEventListener("input", function (e) {
+      if (e.target.value) {
+        dlg.querySelectorAll("[data-gewicht]").forEach(function (b) { b.classList.remove("aktiv"); });
+        gewaehltesGewicht = parseFloat(e.target.value) || 1;
+      }
+    });
+
+    function bindeLoeschen() {
+      dlg.querySelectorAll("[data-typ-loeschen]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var id = btn.getAttribute("data-typ-loeschen");
+          var inBenutzung = fach.lnws.some(function (l) { return l.typId === id; });
+          if (inBenutzung) { alert("Dieser Typ wird noch von mindestens einem Leistungsnachweis verwendet und kann nicht gelöscht werden."); return; }
+          fach.lnwTypen = fach.lnwTypen.filter(function (t) { return t.id !== id; });
+          speichereZustand();
+          dlg.querySelector("#d-typen-liste").innerHTML = zeilenHtml();
+          bindeLoeschen();
+        });
+      });
+    }
+    bindeLoeschen();
+
+    dlg.querySelector("#d-typ-anlegen").addEventListener("click", function () {
+      var name = dlg.querySelector("#d-typ-name").value.trim();
+      if (!name) return;
+      fach.lnwTypen.push({ id: neueId(), name: name, gewicht: gewaehltesGewicht });
+      speichereZustand();
+      dlg.querySelector("#d-typen-liste").innerHTML = zeilenHtml();
+      bindeLoeschen();
+      dlg.querySelector("#d-typ-name").value = "";
+    });
+
+    dlg.querySelector("#d-schliessen").addEventListener("click", function () { dlg.close(); render(); });
+  }
+
+  function dialogNeuerLnw(fach) {
+    if (fach.lnwTypen.length === 0) { alert("Lege zuerst mindestens einen LNW-Typ an."); return; }
+    var dlg = oeffneDialog(
+      '<h2>Neuer Leistungsnachweis</h2>' +
+      '<div class="feld"><label for="d-typ">Typ</label><select id="d-typ">' +
+        fach.lnwTypen.map(function (t) { return '<option value="' + t.id + '">' + escapeHtml(t.name) + '</option>'; }).join("") +
+      '</select></div>' +
+      '<div class="feld"><label for="d-titel">Titel (optional)</label><input type="text" id="d-titel" placeholder="z. B. Bruchrechnen"></div>' +
+      '<div class="feld"><label for="d-datum">Datum (optional)</label><input type="date" id="d-datum"></div>' +
+      '<div class="feld"><label>Gewichtung</label><div class="gewicht-picks" id="d-gewicht-picks"></div>' +
+        '<input type="number" id="d-gewicht-custom" step="0.01"></div>' +
+      '<div class="dialog-aktionen"><button class="btn btn-ghost" id="d-abbrechen">Abbrechen</button><button class="btn btn-primary" id="d-speichern">Anlegen</button></div>'
+    );
+
+    var gewaehltesGewicht = fach.lnwTypen[0].gewicht;
+    function renderGewichtPicks() {
+      dlg.querySelector("#d-gewicht-picks").innerHTML = GEWICHT_PRESETS.map(function (p) {
+        return '<button type="button" class="gewicht-pick' + (Math.abs(p.wert - gewaehltesGewicht) < 0.001 ? ' aktiv' : '') + '" data-gewicht="' + p.wert + '">' + p.label + '</button>';
+      }).join("");
+      dlg.querySelectorAll("[data-gewicht]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          gewaehltesGewicht = parseFloat(btn.getAttribute("data-gewicht"));
+          dlg.querySelector("#d-gewicht-custom").value = "";
+          renderGewichtPicks();
+        });
+      });
+      dlg.querySelector("#d-gewicht-custom").value = GEWICHT_PRESETS.some(function (p) { return Math.abs(p.wert - gewaehltesGewicht) < 0.001; }) ? "" : gewaehltesGewicht;
+    }
+    renderGewichtPicks();
+
+    dlg.querySelector("#d-typ").addEventListener("change", function (e) {
+      var typ = fach.lnwTypen.filter(function (t) { return t.id === e.target.value; })[0];
+      if (typ) { gewaehltesGewicht = typ.gewicht; renderGewichtPicks(); }
+    });
+    dlg.querySelector("#d-gewicht-custom").addEventListener("input", function (e) {
+      if (e.target.value) { gewaehltesGewicht = parseFloat(e.target.value) || 1; renderGewichtPicks(); }
+    });
+
+    dlg.querySelector("#d-abbrechen").addEventListener("click", function () { dlg.close(); });
+    dlg.querySelector("#d-speichern").addEventListener("click", function () {
+      var typId = dlg.querySelector("#d-typ").value;
+      var titel = dlg.querySelector("#d-titel").value.trim();
+      var datum = dlg.querySelector("#d-datum").value;
+      fach.lnws.push({ id: neueId(), typId: typId, titel: titel, datum: datum, gewicht: gewaehltesGewicht, noten: {} });
+      fach.lnws.sort(function (a, b) { return (a.datum || "9999") < (b.datum || "9999") ? -1 : 1; });
+      speichereZustand();
+      dlg.close(); render();
+    });
+  }
+
+  // ---------- Events ----------
+
+  function bindeEvents(klasse) {
+    var neueKlasseBtn = document.getElementById("neue-klasse-btn");
+    if (neueKlasseBtn) neueKlasseBtn.addEventListener("click", dialogNeueKlasse);
+    var leerNeueKlasseBtn = document.getElementById("leer-neue-klasse-btn");
+    if (leerNeueKlasseBtn) leerNeueKlasseBtn.addEventListener("click", dialogNeueKlasse);
+
+    document.querySelectorAll(".klasse-item").forEach(function (el) {
+      el.addEventListener("click", function () {
+        ui.klasseId = el.getAttribute("data-klasse-id");
+        ui.fachId = null;
+        render();
+      });
+    });
+
+    if (!klasse) return;
+
+    var schuelerBtn = document.getElementById("schueler-verwalten-btn");
+    if (schuelerBtn) schuelerBtn.addEventListener("click", function () { dialogSchuelerVerwalten(klasse); });
+    var leeresFachSchuelerBtn = document.getElementById("leeres-fach-schueler-btn");
+    if (leeresFachSchuelerBtn) leeresFachSchuelerBtn.addEventListener("click", function () { dialogSchuelerVerwalten(klasse); });
+    var umbenennenBtn = document.getElementById("klasse-umbenennen-btn");
+    if (umbenennenBtn) umbenennenBtn.addEventListener("click", function () { dialogKlasseUmbenennen(klasse); });
+    var loeschenBtn = document.getElementById("klasse-loeschen-btn");
+    if (loeschenBtn) loeschenBtn.addEventListener("click", function () { dialogKlasseLoeschen(klasse); });
+
+    var neuesFachBtn = document.getElementById("neues-fach-btn");
+    if (neuesFachBtn) neuesFachBtn.addEventListener("click", function () { dialogNeuesFach(klasse); });
+    var leeresFachNeuBtn = document.getElementById("leeres-fach-neu-btn");
+    if (leeresFachNeuBtn) leeresFachNeuBtn.addEventListener("click", function () { dialogNeuesFach(klasse); });
+
+    document.querySelectorAll(".fach-tab").forEach(function (el) {
+      el.addEventListener("click", function () { ui.fachId = el.getAttribute("data-fach-id"); render(); });
+    });
+
+    var fach = findeFach(klasse, ui.fachId);
+    if (fach) {
+      var neuerLnwBtn = document.getElementById("neuer-lnw-btn");
+      if (neuerLnwBtn) neuerLnwBtn.addEventListener("click", function () { dialogNeuerLnw(fach); });
+      var leeresFachLnwBtn = document.getElementById("leeres-fach-lnw-btn");
+      if (leeresFachLnwBtn) leeresFachLnwBtn.addEventListener("click", function () { dialogNeuerLnw(fach); });
+      var typenBtn = document.getElementById("typen-verwalten-btn");
+      if (typenBtn) typenBtn.addEventListener("click", function () { dialogTypenVerwalten(fach); });
+      var fachUmbenennenBtn = document.getElementById("fach-umbenennen-btn");
+      if (fachUmbenennenBtn) fachUmbenennenBtn.addEventListener("click", function () { dialogFachUmbenennen(fach); });
+      var fachLoeschenBtn = document.getElementById("fach-loeschen-btn");
+      if (fachLoeschenBtn) fachLoeschenBtn.addEventListener("click", function () { dialogFachLoeschen(klasse, fach); });
+      var druckenBtn = document.getElementById("drucken-btn");
+      if (druckenBtn) druckenBtn.addEventListener("click", function () { window.print(); });
+
+      document.querySelectorAll("[data-lnw-loeschen]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var id = btn.getAttribute("data-lnw-loeschen");
+          if (!confirm("Diesen Leistungsnachweis mit allen Noten löschen?")) return;
+          fach.lnws = fach.lnws.filter(function (l) { return l.id !== id; });
+          speichereZustand(); render();
+        });
+      });
+
+      document.querySelectorAll("select.noten-select").forEach(function (sel) {
+        sel.addEventListener("change", function () {
+          var lnwId = sel.getAttribute("data-lnw-id");
+          var schuelerId = sel.getAttribute("data-schueler-id");
+          var lnw = fach.lnws.filter(function (l) { return l.id === lnwId; })[0];
+          if (!lnw) return;
+          if (sel.value) lnw.noten[schuelerId] = sel.value; else delete lnw.noten[schuelerId];
+          speichereZustand();
+          render();
+        });
+      });
+    }
+
+    var exportBtn = document.getElementById("export-btn");
+    if (exportBtn) exportBtn.addEventListener("click", exportieren);
+    var importBtn = document.getElementById("import-btn");
+    var importDatei = document.getElementById("import-datei");
+    if (importBtn && importDatei) {
+      importBtn.addEventListener("click", function () { importDatei.click(); });
+      importDatei.addEventListener("change", function () {
+        var datei = importDatei.files[0];
+        if (!datei) return;
+        var reader = new FileReader();
+        reader.onload = function () {
+          try {
+            var neu = JSON.parse(reader.result);
+            if (!neu || !Array.isArray(neu.klassen)) throw new Error("ungültig");
+            if (!confirm("Sicherung einspielen? Das ersetzt alle aktuell gespeicherten Klassen auf diesem Gerät.")) return;
+            zustand = neu; speichereZustand();
+            ui.klasseId = null; ui.fachId = null;
+            render();
+          } catch (e) { alert("Die Datei konnte nicht gelesen werden. Ist es eine Notenbuch-Sicherungsdatei?"); }
+        };
+        reader.readAsText(datei);
+      });
+    }
+  }
+
+  function exportieren() {
+    var daten = JSON.stringify(zustand, null, 2);
+    var blob = new Blob([daten], { type: "application/json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    var heute = new Date().toISOString().slice(0, 10);
+    a.href = url; a.download = "notenbuch-sicherung-" + heute + ".json";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
