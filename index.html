@@ -160,16 +160,27 @@
   table.notentabelle th, table.notentabelle td { padding: 9px 12px; text-align: center; border-bottom: 1px solid var(--border); white-space: nowrap; }
   table.notentabelle th:not(.schueler-col):not(.schnitt-col), table.notentabelle td:not(.schueler-col):not(.schnitt-col) { text-align: left; }
   table.notentabelle thead th { font-weight: 600; vertical-align: bottom; background: var(--surface); position: sticky; top: 0; z-index: 2; }
+  table.notentabelle th.nr-col, table.notentabelle td.nr-col {
+    text-align: center; position: sticky; left: 0; background: var(--surface); z-index: 3; color: var(--muted);
+    font-weight: 500; width: 36px; min-width: 36px;
+  }
   table.notentabelle th.schueler-col, table.notentabelle td.schueler-col {
-    text-align: left; position: sticky; left: 0; background: var(--surface); z-index: 3; border-right: 1px solid var(--border); font-weight: 500;
+    text-align: left; position: sticky; left: 36px; background: var(--surface); z-index: 3; border-right: 1px solid var(--border); font-weight: 500;
     min-width: 160px;
   }
   .schueler-klickbar { cursor: pointer; }
   .schueler-klickbar:hover { color: var(--accent); text-decoration: underline; }
-  table.notentabelle thead th.schueler-col { z-index: 4; }
+  table.notentabelle thead th.schueler-col, table.notentabelle thead th.nr-col { z-index: 4; }
   table.notentabelle tbody tr:hover td { background: var(--surface-2); }
-  table.notentabelle tbody tr:hover td.schueler-col { background: var(--surface-2); }
+  table.notentabelle tbody tr:hover td.schueler-col, table.notentabelle tbody tr:hover td.nr-col { background: var(--surface-2); }
   table.notentabelle td.schnitt-col, table.notentabelle th.schnitt-col { font-weight: 700; background: var(--accent-tint); color: var(--accent); }
+  table.notentabelle th.entfernen-col, table.notentabelle td.entfernen-col { width: 32px; padding: 9px 6px; }
+  .schueler-entfernen-btn {
+    background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.78rem; padding: 3px 6px; border-radius: 5px;
+    opacity: 0; transition: opacity .12s;
+  }
+  table.notentabelle tbody tr:hover .schueler-entfernen-btn { opacity: 1; }
+  .schueler-entfernen-btn:hover { color: var(--danger); background: var(--danger-tint); }
   table.notentabelle tfoot td { font-weight: 700; background: var(--surface-2); border-top: 2px solid var(--border); border-bottom: none; }
   .lnw-head { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; min-width: 110px; max-width: 160px; }
   .lnw-head .nr { color: var(--muted); font-weight: 500; font-size: 0.74rem; }
@@ -296,7 +307,7 @@
     .shell { display: block; }
     .main { padding: 0; }
     body { background: #fff; color: #000; }
-    table.notentabelle th.schueler-col, table.notentabelle td.schueler-col { position: static; }
+    table.notentabelle th.schueler-col, table.notentabelle td.schueler-col, table.notentabelle th.nr-col, table.notentabelle td.nr-col { position: static; }
     table.notentabelle thead th { position: static; }
     .tabellen-wrap { border: none; }
     select.noten-select { border: none; appearance: none; background: none; }
@@ -329,6 +340,9 @@
     display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; border-bottom: 1px solid #ccc; break-inside: avoid;
   }
   .druck-schueler-zeile span:last-child { font-weight: 700; }
+  .druck-unterschrift { margin-top: 60px; max-width: 280px; }
+  .druck-unterschrift { border-top: 1px solid #000; padding-top: 4px; }
+  .druck-unterschrift span { font-size: 0.78rem; color: #333; }
 </style>
 </head>
 <body>
@@ -422,6 +436,11 @@
     return null;
   }
 
+  function sichtbareSchueler(klasse, fach) {
+    var ausgeschlossen = fach.ausgeschlosseneSchueler || [];
+    return klasse.schueler.filter(function (s) { return ausgeschlossen.indexOf(s.id) === -1; });
+  }
+
   function formatSchnitt(wert) {
     if (wert == null) return "–";
     return wert.toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 2 });
@@ -458,7 +477,7 @@
 
   function klassenDurchschnittFach(klasse, fach) {
     var summe = 0, anzahl = 0;
-    klasse.schueler.forEach(function (s) {
+    sichtbareSchueler(klasse, fach).forEach(function (s) {
       var sc = schuelerSchnitt(fach, s.id);
       if (sc == null) return;
       summe += sc; anzahl++;
@@ -742,7 +761,10 @@
   }
 
   function renderNotentabelle(klasse, fach) {
-    var html = '<div class="tabellen-wrap"><table class="notentabelle"><thead><tr><th class="schueler-col">Schüler</th>';
+    var schueler = sichtbareSchueler(klasse, fach);
+    var ausgeschlosseneAnzahl = (fach.ausgeschlosseneSchueler || []).length;
+
+    var html = '<div class="tabellen-wrap"><table class="notentabelle"><thead><tr><th class="nr-col">Nr.</th><th class="schueler-col">Schüler</th>';
     fach.lnws.forEach(function (lnw, i) {
       var typ = fach.lnwTypen.filter(function (t) { return t.id === lnw.typId; })[0];
       var typName = typ ? typ.name : "?";
@@ -750,16 +772,17 @@
         '<span class="nr">' + (i + 1) + '. LNW</span>' +
         '<span class="typ">' + escapeHtml(typName) + '</span>' +
         (lnw.titel ? '<span class="thema">Thema: „' + escapeHtml(lnw.titel) + '“</span>' : '') +
-        '<span class="zusatz">' + (lnw.datum ? 'geschrieben am ' + formatDatumLang(lnw.datum) : 'kein Datum') + ' · ' + formatGewicht(lnw.gewicht) + '</span>' +
+        '<span class="zusatz">' + (lnw.datum ? formatDatumLang(lnw.datum) : 'kein Datum') + ' · ' + formatGewicht(lnw.gewicht) + '</span>' +
         '<div class="lnw-head-aktionen druck-ausblenden">' +
         '<button class="lnw-head-btn" data-lnw-drucken="' + lnw.id + '">Drucken</button>' +
         '<button class="lnw-head-btn" data-lnw-loeschen="' + lnw.id + '">Löschen</button>' +
         '</div></div></th>';
     });
-    html += '<th class="schnitt-col">Schnitt</th></tr></thead><tbody>';
+    html += '<th class="schnitt-col">Schnitt</th><th class="entfernen-col druck-ausblenden"></th></tr></thead><tbody>';
 
-    klasse.schueler.forEach(function (s) {
-      html += '<tr><td class="schueler-col schueler-klickbar" data-schueler-uebersicht="' + s.id + '">' + escapeHtml(s.name) + '</td>';
+    schueler.forEach(function (s, idx) {
+      html += '<tr><td class="nr-col">' + (idx + 1) + '</td>' +
+        '<td class="schueler-col schueler-klickbar" data-schueler-uebersicht="' + s.id + '">' + escapeHtml(s.name) + '</td>';
       fach.lnws.forEach(function (lnw) {
         var wert = lnw.noten[s.id] || "";
         html += '<td><select class="noten-select" data-lnw-id="' + lnw.id + '" data-schueler-id="' + s.id + '">' +
@@ -768,15 +791,21 @@
           '</select></td>';
       });
       var schnitt = schuelerSchnitt(fach, s.id);
-      html += '<td class="schnitt-col">' + formatSchnitt(schnitt) + '</td></tr>';
+      html += '<td class="schnitt-col">' + formatSchnitt(schnitt) + '</td>' +
+        '<td class="entfernen-col druck-ausblenden"><button class="schueler-entfernen-btn" data-schueler-entfernen="' + s.id + '" title="Aus diesem Fach entfernen">✕</button></td></tr>';
     });
 
-    html += '</tbody><tfoot><tr><td class="schueler-col">⌀ Klasse</td>';
+    html += '</tbody><tfoot><tr><td class="nr-col"></td><td class="schueler-col">⌀ Klasse</td>';
     fach.lnws.forEach(function (lnw) {
-      html += '<td>' + formatSchnitt(lnwSchnitt(lnw, klasse.schueler)) + '</td>';
+      html += '<td>' + formatSchnitt(lnwSchnitt(lnw, schueler)) + '</td>';
     });
-    html += '<td class="schnitt-col">' + formatSchnitt(klassenDurchschnittFach(klasse, fach)) + '</td></tr></tfoot>';
+    html += '<td class="schnitt-col">' + formatSchnitt(klassenDurchschnittFach(klasse, fach)) + '</td><td class="druck-ausblenden"></td></tr></tfoot>';
     html += '</table></div>';
+
+    if (ausgeschlosseneAnzahl > 0) {
+      html += '<button class="text-btn druck-ausblenden" id="ausgeschlossene-verwalten-btn">' + ausgeschlosseneAnzahl +
+        (ausgeschlosseneAnzahl === 1 ? ' Schüler ist' : ' Schüler sind') + ' für dieses Fach ausgeblendet – verwalten</button>';
+    }
     return html;
   }
 
@@ -796,11 +825,12 @@
 
   function baueLnwDruckHtml(klasse, fach, lnw) {
     var typ = fach.lnwTypen.filter(function (t) { return t.id === lnw.typId; })[0];
+    var sichtbare = sichtbareSchueler(klasse, fach);
     var verteilung = [0, 0, 0, 0, 0, 0];
-    var zeilen = klasse.schueler.map(function (s) {
+    var zeilen = sichtbare.map(function (s, idx) {
       var wert = lnw.noten[s.id];
       if (wert) { verteilung[parseInt(wert.charAt(0), 10) - 1]++; }
-      return { name: s.name, wert: wert || "–" };
+      return { nr: idx + 1, name: s.name, wert: wert || "–" };
     });
     var maxAnzahl = Math.max.apply(null, verteilung.concat([1]));
     var balken = verteilung.map(function (anzahl, i) {
@@ -818,17 +848,21 @@
     }
     var listeHtml = spalten.map(function (spalte) {
       return '<div class="druck-schuelerliste">' + spalte.map(function (z) {
-        return '<div class="druck-schueler-zeile"><span>' + escapeHtml(z.name) + '</span><span>' + escapeHtml(z.wert) + '</span></div>';
+        return '<div class="druck-schueler-zeile"><span>' + z.nr + '. ' + escapeHtml(z.name) + '</span><span>' + escapeHtml(z.wert) + '</span></div>';
       }).join("") + '</div>';
     }).join("");
+
+    var klassenschnitt = lnwSchnitt(lnw, sichtbare);
 
     return '<div class="druck-lnw-seite">' +
       '<h1>' + escapeHtml(klasse.name) + ' – ' + escapeHtml(fach.name) + '</h1>' +
       '<h2>' + escapeHtml(typ ? typ.name : "") + (lnw.titel ? ' – „' + escapeHtml(lnw.titel) + '“' : '') + '</h2>' +
-      '<p class="druck-lnw-meta">' + (lnw.datum ? 'geschrieben am ' + formatDatumLang(lnw.datum) : 'kein Datum') + ' · Gewichtung ' + formatGewicht(lnw.gewicht) + '</p>' +
+      '<p class="druck-lnw-meta">' + (lnw.datum ? formatDatumLang(lnw.datum) : 'kein Datum') + ' · Gewichtung ' + formatGewicht(lnw.gewicht) +
+        ' · Klassendurchschnitt ' + formatSchnitt(klassenschnitt) + '</p>' +
       '<div class="druck-diagramm">' + balken + '</div>' +
       '<p class="druck-schueler-titel">Noten</p>' +
       '<div class="druck-schuelerliste-spalten">' + listeHtml + '</div>' +
+      '<div class="druck-unterschrift"><span>Unterschrift</span></div>' +
       '</div>';
   }
 
@@ -951,6 +985,7 @@
           klasse.schueler = klasse.schueler.filter(function (s) { return s.id !== id; });
           klasse.faecher.forEach(function (f) {
             f.lnws.forEach(function (lnw) { delete lnw.noten[id]; });
+            if (f.ausgeschlosseneSchueler) f.ausgeschlosseneSchueler = f.ausgeschlosseneSchueler.filter(function (x) { return x !== id; });
           });
           speichereZustand();
           dlg.querySelector("#d-schueler-liste").innerHTML = zeilenHtml();
@@ -976,6 +1011,37 @@
     });
   }
 
+  function dialogAusgeschlosseneVerwalten(klasse, fach) {
+    function zeilenHtml() {
+      var ids = fach.ausgeschlosseneSchueler || [];
+      var liste = ids.map(function (id) { return klasse.schueler.filter(function (s) { return s.id === id; })[0]; }).filter(Boolean);
+      if (liste.length === 0) return '<p style="color:var(--muted);font-size:0.86rem;">Niemand ist ausgeblendet.</p>';
+      return liste.map(function (s) {
+        return '<div class="typen-zeile"><span class="name">' + escapeHtml(s.name) + '</span>' +
+          '<button data-schueler-wieder-aufnehmen="' + s.id + '">Wieder aufnehmen</button></div>';
+      }).join("");
+    }
+    var dlg = oeffneDialog(
+      '<h2>Ausgeblendete Schüler – ' + escapeHtml(fach.name) + '</h2>' +
+      '<p style="color:var(--muted);font-size:0.84rem;margin-bottom:12px;">Diese Schüler nehmen an diesem Fach nicht teil und tauchen deshalb nicht in der Notentabelle auf.</p>' +
+      '<div class="typen-liste" id="d-ausgeschlossene-liste">' + zeilenHtml() + '</div>' +
+      '<div class="dialog-aktionen"><button class="btn btn-ghost" id="d-schliessen">Fertig</button></div>'
+    );
+    function bindeWiederAufnehmen() {
+      dlg.querySelectorAll("[data-schueler-wieder-aufnehmen]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var id = btn.getAttribute("data-schueler-wieder-aufnehmen");
+          fach.ausgeschlosseneSchueler = (fach.ausgeschlosseneSchueler || []).filter(function (x) { return x !== id; });
+          speichereZustand();
+          dlg.querySelector("#d-ausgeschlossene-liste").innerHTML = zeilenHtml();
+          bindeWiederAufnehmen();
+        });
+      });
+    }
+    bindeWiederAufnehmen();
+    dlg.querySelector("#d-schliessen").addEventListener("click", function () { dlg.close(); render(); });
+  }
+
   function dialogNeuesFach(klasse) {
     var dlg = oeffneDialog(
       '<h2>Neues Fach</h2>' +
@@ -991,7 +1057,7 @@
       var neu = {
         id: neueId(), name: name,
         lnwTypen: STANDARD_LNW_TYPEN.map(function (t) { return { id: neueId(), name: t.name, gewicht: t.gewicht }; }),
-        lnws: []
+        lnws: [], ausgeschlosseneSchueler: []
       };
       klasse.faecher.push(neu);
       speichereZustand();
@@ -1392,6 +1458,18 @@
           speichereZustand(); render();
         });
       });
+
+      document.querySelectorAll("[data-schueler-entfernen]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var id = btn.getAttribute("data-schueler-entfernen");
+          if (!fach.ausgeschlosseneSchueler) fach.ausgeschlosseneSchueler = [];
+          if (fach.ausgeschlosseneSchueler.indexOf(id) === -1) fach.ausgeschlosseneSchueler.push(id);
+          speichereZustand(); render();
+        });
+      });
+
+      var ausgeschlosseneBtn = document.getElementById("ausgeschlossene-verwalten-btn");
+      if (ausgeschlosseneBtn) ausgeschlosseneBtn.addEventListener("click", function () { dialogAusgeschlosseneVerwalten(klasse, fach); });
 
       document.querySelectorAll("select.noten-select").forEach(function (sel) {
         sel.addEventListener("change", function () {
