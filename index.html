@@ -87,6 +87,8 @@
   .brand { font-family: var(--serif); font-size: 1.3rem; font-weight: 700; padding: 0 4px; }
   .brand span { color: var(--accent); }
   .klassen-liste { display: flex; flex-direction: column; gap: 3px; }
+  .werkzeuge-liste { padding-bottom: 12px; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
+  @media (max-width: 860px) { .werkzeuge-liste { padding-bottom: 0; margin-bottom: 0; border-bottom: none; border-right: 1px solid var(--border); padding-right: 10px; margin-right: 2px; } }
   .klasse-item {
     display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 12px; border-radius: 8px;
     cursor: pointer; border: 1px solid transparent; font-size: 0.92rem; font-weight: 500; white-space: nowrap;
@@ -158,15 +160,18 @@
     text-align: left; position: sticky; left: 0; background: var(--surface); z-index: 3; border-right: 1px solid var(--border); font-weight: 500;
     min-width: 160px;
   }
+  .schueler-klickbar { cursor: pointer; }
+  .schueler-klickbar:hover { color: var(--accent); text-decoration: underline; }
   table.notentabelle thead th.schueler-col { z-index: 4; }
   table.notentabelle tbody tr:hover td { background: var(--surface-2); }
   table.notentabelle tbody tr:hover td.schueler-col { background: var(--surface-2); }
   table.notentabelle td.schnitt-col, table.notentabelle th.schnitt-col { font-weight: 700; background: var(--accent-tint); color: var(--accent); }
   table.notentabelle tfoot td { font-weight: 700; background: var(--surface-2); border-top: 2px solid var(--border); border-bottom: none; }
-  .lnw-head { display: flex; flex-direction: column; gap: 2px; align-items: center; min-width: 88px; }
+  .lnw-head { display: flex; flex-direction: column; gap: 2px; align-items: center; min-width: 110px; max-width: 160px; }
   .lnw-head .nr { color: var(--muted); font-weight: 500; font-size: 0.74rem; }
   .lnw-head .typ { font-weight: 600; }
-  .lnw-head .zusatz { color: var(--muted); font-weight: 400; font-size: 0.74rem; }
+  .lnw-head .thema { color: var(--ink); font-weight: 500; font-style: italic; font-size: 0.76rem; max-width: 150px; white-space: normal; }
+  .lnw-head .zusatz { color: var(--muted); font-weight: 400; font-size: 0.72rem; white-space: normal; text-align: center; }
   .lnw-head-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.72rem; padding: 2px 6px; border-radius: 5px; }
   .lnw-head-btn:hover { color: var(--danger); background: var(--danger-tint); }
 
@@ -199,6 +204,11 @@
   .gewicht-pick.aktiv { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
   .dialog-aktionen { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
 
+  .ueberblick-inhalt { max-height: 60vh; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
+  .ueberblick-fach h3 { display: flex; justify-content: space-between; align-items: baseline; font-size: 1rem; margin-bottom: 8px; }
+  .schnitt-badge-dialog { font-family: var(--sans); font-size: 0.82rem; font-weight: 600; color: var(--accent); }
+  .ueberblick-zeile { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; font-size: 0.86rem; border-bottom: 1px solid var(--border); }
+  .ueberblick-zeile .note-wert { font-weight: 700; flex: 0 0 auto; }
   .typen-liste { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; max-height: 260px; overflow-y: auto; }
   .typen-zeile { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; }
   .typen-zeile .name { flex: 1; font-weight: 500; font-size: 0.9rem; }
@@ -213,6 +223,36 @@
   .schueler-zeile-edit button:hover { color: var(--danger); }
 
   .fuss-leiste { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+  .kalender-kopf { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .kalender-kopf h1 { font-size: 1.5rem; flex: 1; }
+  .kalender-grid-wrap { overflow-x: auto; }
+  .kalender-grid { display: grid; grid-template-columns: repeat(7, minmax(110px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; min-width: 100%; width: max-content; }
+  @media (max-width: 860px) { .kalender-grid { width: 770px; } }
+  .kalender-wochentag { background: var(--surface); padding: 8px 6px; font-size: 0.76rem; font-weight: 600; color: var(--muted); text-align: center; }
+  .kalender-tag { background: var(--bg); min-height: 92px; padding: 6px; display: flex; flex-direction: column; gap: 4px; position: relative; }
+  .kalender-tag.leer { background: var(--surface); }
+  .kalender-tag.ferien { background: var(--surface-2); }
+  .kalender-tag.heute .tagnummer { background: var(--accent); color: var(--accent-ink); border-radius: 999px; padding: 0 6px; }
+  .tagnummer { font-size: 0.78rem; font-weight: 600; align-self: flex-start; }
+  .ferien-label { font-size: 0.64rem; color: var(--muted); line-height: 1.2; }
+  .termin-chip {
+    font-family: var(--sans); font-size: 0.66rem; line-height: 1.25; text-align: left; background: var(--accent-tint); color: var(--accent);
+    border: none; border-radius: 6px; padding: 3px 5px; cursor: pointer; font-weight: 600;
+  }
+  .termin-chip:hover { filter: brightness(0.95); }
+  .tag-plus {
+    position: absolute; top: 4px; right: 4px; width: 18px; height: 18px; border-radius: 5px; border: none; background: none;
+    color: var(--muted); cursor: pointer; font-size: 0.8rem; opacity: 0; transition: opacity .15s;
+  }
+  .kalender-tag:hover .tag-plus { opacity: 1; }
+  .tag-plus:hover { background: var(--accent-tint); color: var(--accent); }
+  .kalender-hinweis { margin-top: 14px; font-size: 0.82rem; color: var(--muted); }
+
+  .stundenplan-vorschau { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--surface); max-width: 720px; }
+  .stundenplan-vorschau img { width: 100%; display: block; }
+  .stundenplan-vorschau embed { width: 100%; height: 70vh; display: block; }
+  .stundenplan-vorschau p { padding: 10px 14px; font-size: 0.86rem; }
 
   .nur-druck { display: none; }
   @media print {
@@ -258,6 +298,7 @@
   var STANDARD_LNW_TYPEN = [
     { name: "Großer LNW", gewicht: 2 },
     { name: "Kleiner LNW", gewicht: 1 },
+    { name: "Mündliche Beiträge", gewicht: 1 },
     { name: "Vokabeltest", gewicht: 1 / 3 },
     { name: "Referat", gewicht: 1 },
     { name: "Gruppenarbeit", gewicht: 1 },
@@ -268,22 +309,45 @@
     { name: "Plakat", gewicht: 1 }
   ];
 
+  // Offizielle Ferientermine Bayern, Quelle: km.bayern.de/termine/ferien-und-feiertage,
+  // Bekanntmachung BayMBl. 2022 Nr. 747 (Schuljahre 2024/25 bis 2029/30). Stand der Erfassung: 11/2026,
+  // hier eingetragen bis einschließlich Sommerferien 2027. Weitere Schuljahre bei Bedarf ergänzen.
+  var BAYERN_FERIEN = [
+    { name: "Sommerferien 2026", start: "2026-08-03", ende: "2026-09-14" },
+    { name: "Allerheiligen-Ferien 2026", start: "2026-11-02", ende: "2026-11-06" },
+    { name: "Weihnachtsferien 2026/27", start: "2026-12-24", ende: "2027-01-08" },
+    { name: "Frühjahrsferien 2027", start: "2027-02-08", ende: "2027-02-12" },
+    { name: "Osterferien 2027", start: "2027-03-22", ende: "2027-04-02" },
+    { name: "Pfingstferien 2027", start: "2027-05-18", ende: "2027-05-28" },
+    { name: "Sommerferien 2027", start: "2027-08-02", ende: "2027-09-13" }
+  ];
+
+  function ferienAmTag(iso) {
+    return BAYERN_FERIEN.filter(function (f) { return iso >= f.start && iso <= f.ende; })[0] || null;
+  }
+
   function neueId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+
+  function heuteIso() {
+    var d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
 
   function ladeZustand() {
     try {
       var roh = localStorage.getItem(SPEICHER_KEY);
       if (roh) return JSON.parse(roh);
     } catch (e) {}
-    return { klassen: [] };
+    return { klassen: [], stundenplan: null };
   }
 
   function speichereZustand() {
-    try { localStorage.setItem(SPEICHER_KEY, JSON.stringify(zustand)); } catch (e) {}
+    try { localStorage.setItem(SPEICHER_KEY, JSON.stringify(zustand)); return true; } catch (e) { return false; }
   }
 
   var zustand = ladeZustand();
-  var ui = { klasseId: null, fachId: null };
+  var heute = new Date();
+  var ui = { klasseId: null, fachId: null, ansicht: "klasse", kalenderJahr: heute.getFullYear(), kalenderMonat: heute.getMonth() };
 
   function findeKlasse(id) {
     for (var i = 0; i < zustand.klassen.length; i++) { if (zustand.klassen[i].id === id) return zustand.klassen[i]; }
@@ -340,12 +404,30 @@
     return summe / anzahl;
   }
 
+  function alleLnwsMitKontext() {
+    var liste = [];
+    zustand.klassen.forEach(function (k) {
+      k.faecher.forEach(function (f) {
+        f.lnws.forEach(function (lnw) {
+          if (!lnw.datum) return;
+          var typ = f.lnwTypen.filter(function (t) { return t.id === lnw.typId; })[0];
+          liste.push({ klasse: k, fach: f, lnw: lnw, typName: typ ? typ.name : "?" });
+        });
+      });
+    });
+    return liste;
+  }
+
   var app = document.getElementById("app");
 
   function render() {
     var klasse = findeKlasse(ui.klasseId);
     var html = '<div class="shell">' + renderSidebar(klasse) + '<main class="main"><div class="main-inner panel-enter">';
-    if (!klasse) {
+    if (ui.ansicht === "kalender") {
+      html += renderKalender();
+    } else if (ui.ansicht === "stundenplan") {
+      html += renderStundenplan();
+    } else if (!klasse) {
       html += renderLeerZustand();
     } else {
       var fach = findeFach(klasse, ui.fachId);
@@ -363,12 +445,18 @@
 
   function renderSidebar(klasseAktiv) {
     var liste = zustand.klassen.map(function (k) {
-      var aktiv = klasseAktiv && k.id === klasseAktiv.id;
+      var aktiv = ui.ansicht === "klasse" && klasseAktiv && k.id === klasseAktiv.id;
       return '<div class="klasse-item' + (aktiv ? ' aktiv' : '') + '" data-klasse-id="' + k.id + '">' +
         '<span>' + escapeHtml(k.name) + '</span><span class="anzahl">' + k.schueler.length + '</span></div>';
     }).join("");
+    var werkzeuge = ["kalender", "stundenplan"].map(function (a) {
+      var label = a === "kalender" ? "Kalender" : "Stundenplan";
+      return '<div class="klasse-item' + (ui.ansicht === a ? ' aktiv' : '') + '" data-ansicht="' + a + '">' +
+        '<span>' + label + '</span></div>';
+    }).join("");
     return '<nav class="sidebar">' +
       '<div class="brand">Noten<span>buch</span></div>' +
+      '<div class="klassen-liste werkzeuge-liste">' + werkzeuge + '</div>' +
       '<div class="klassen-liste">' + liste + '</div>' +
       '<button class="neue-klasse-btn" id="neue-klasse-btn">+ Neue Klasse</button>' +
       '<div class="sidebar-footer"></div>' +
@@ -382,6 +470,73 @@
         '<button class="btn btn-primary" id="leer-neue-klasse-btn">+ Neue Klasse anlegen</button></div>';
     }
     return '<div class="leer-zustand"><h2>Wähle eine Klasse</h2><p>Wähle links eine Klasse aus, oder leg eine neue an.</p></div>';
+  }
+
+  var MONATSNAMEN = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+  var WOCHENTAGE = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+
+  function renderKalender() {
+    var jahr = ui.kalenderJahr, monat = ui.kalenderMonat;
+    var ersterTag = new Date(jahr, monat, 1);
+    var anzahlTage = new Date(jahr, monat + 1, 0).getDate();
+    var startOffset = (ersterTag.getDay() + 6) % 7; // Montag = 0
+    var alleLnws = alleLnwsMitKontext();
+
+    var html = '<div class="kalender-kopf druck-ausblenden">' +
+      '<button class="btn btn-ghost btn-sm" id="monat-zurueck">←</button>' +
+      '<h1>' + MONATSNAMEN[monat] + " " + jahr + '</h1>' +
+      '<button class="btn btn-ghost btn-sm" id="monat-vor">→</button>' +
+      '<button class="btn btn-ghost btn-sm" id="monat-heute">Heute</button>' +
+      '</div>';
+
+    html += '<div class="kalender-grid-wrap"><div class="kalender-grid">';
+    WOCHENTAGE.forEach(function (w) { html += '<div class="kalender-wochentag">' + w + '</div>'; });
+
+    for (var i = 0; i < startOffset; i++) html += '<div class="kalender-tag leer"></div>';
+
+    for (var tag = 1; tag <= anzahlTage; tag++) {
+      var iso = jahr + "-" + String(monat + 1).padStart(2, "0") + "-" + String(tag).padStart(2, "0");
+      var ferien = ferienAmTag(iso);
+      var istHeute = iso === heuteIso();
+      var termine = alleLnws.filter(function (e) { return e.lnw.datum === iso; });
+      html += '<div class="kalender-tag' + (ferien ? ' ferien' : '') + (istHeute ? ' heute' : '') + '" data-tag="' + iso + '">' +
+        '<span class="tagnummer">' + tag + '</span>' +
+        (ferien ? '<span class="ferien-label">' + escapeHtml(ferien.name) + '</span>' : '') +
+        termine.map(function (e) {
+          return '<button class="termin-chip" data-termin-klasse="' + e.klasse.id + '" data-termin-fach="' + e.fach.id + '">' +
+            escapeHtml(e.klasse.name) + ' · ' + escapeHtml(e.fach.name) + '<br>' + escapeHtml(e.typName) + '</button>';
+        }).join("") +
+        '<button class="tag-plus druck-ausblenden" data-tag-plus="' + iso + '" title="Leistungsnachweis planen">+</button>' +
+        '</div>';
+    }
+    html += '</div></div>';
+    html += '<p class="kalender-hinweis druck-ausblenden">Bayerische Schulferien grau hinterlegt. Auf ein Datum klicken, um einen Leistungsnachweis zu planen, oder auf einen vorhandenen Termin, um direkt zu den Noten zu springen.</p>';
+    return html;
+  }
+
+  function renderStundenplan() {
+    var html = '<h1>Stundenplan</h1><p class="meta-zeile">Nur auf diesem Gerät gespeichert.</p>';
+    if (zustand.stundenplan) {
+      var sp = zustand.stundenplan;
+      html += '<div class="stundenplan-vorschau">';
+      if (sp.typ.indexOf("image/") === 0) {
+        html += '<img src="' + sp.dataUrl + '" alt="Stundenplan">';
+      } else {
+        html += '<embed src="' + sp.dataUrl + '" type="application/pdf">' +
+          '<p><a href="' + sp.dataUrl + '" target="_blank" rel="noopener">In neuem Tab öffnen</a></p>';
+      }
+      html += '</div>' +
+        '<div class="toolbar-aktionen druck-ausblenden" style="margin-top:16px;">' +
+        '<button class="btn btn-ghost btn-sm" id="stundenplan-ersetzen-btn">Ersetzen</button>' +
+        '<button class="btn btn-danger-ghost btn-sm" id="stundenplan-entfernen-btn">Entfernen</button>' +
+        '<input type="file" id="stundenplan-datei" accept="image/*,application/pdf" hidden>' +
+        '</div>';
+    } else {
+      html += '<div class="leeres-fach druck-ausblenden"><p>Lade ein Foto oder PDF deines Stundenplans hoch, um ihn hier jederzeit griffbereit zu haben.</p>' +
+        '<button class="btn btn-primary" id="stundenplan-hochladen-btn">Stundenplan hochladen</button>' +
+        '<input type="file" id="stundenplan-datei" accept="image/*,application/pdf" hidden></div>';
+    }
+    return html;
   }
 
   function renderKlasse(klasse, fach) {
@@ -441,14 +596,15 @@
       html += '<th><div class="lnw-head">' +
         '<span class="nr">' + (i + 1) + '. LNW</span>' +
         '<span class="typ">' + escapeHtml(typName) + '</span>' +
-        '<span class="zusatz">' + (lnw.titel ? escapeHtml(lnw.titel) + " · " : "") + formatGewicht(lnw.gewicht) + (lnw.datum ? " · " + formatDatum(lnw.datum) : "") + '</span>' +
+        (lnw.titel ? '<span class="thema">Thema: „' + escapeHtml(lnw.titel) + '“</span>' : '') +
+        '<span class="zusatz">' + (lnw.datum ? 'geschrieben am ' + formatDatumLang(lnw.datum) : 'kein Datum') + ' · ' + formatGewicht(lnw.gewicht) + '</span>' +
         '<button class="lnw-head-btn druck-ausblenden" data-lnw-loeschen="' + lnw.id + '">Löschen</button>' +
         '</div></th>';
     });
     html += '<th class="schnitt-col">Schnitt</th></tr></thead><tbody>';
 
     klasse.schueler.forEach(function (s) {
-      html += '<tr><td class="schueler-col">' + escapeHtml(s.name) + '</td>';
+      html += '<tr><td class="schueler-col schueler-klickbar" data-schueler-uebersicht="' + s.id + '">' + escapeHtml(s.name) + '</td>';
       fach.lnws.forEach(function (lnw) {
         var wert = lnw.noten[s.id] || "";
         html += '<td><select class="noten-select" data-lnw-id="' + lnw.id + '" data-schueler-id="' + s.id + '">' +
@@ -474,6 +630,13 @@
     var teile = iso.split("-");
     if (teile.length !== 3) return iso;
     return teile[2] + "." + teile[1] + ".";
+  }
+
+  function formatDatumLang(iso) {
+    if (!iso) return "";
+    var teile = iso.split("-");
+    if (teile.length !== 3) return iso;
+    return teile[2] + "." + teile[1] + "." + teile[0];
   }
 
   function escapeHtml(str) {
@@ -511,7 +674,7 @@
       var neu = { id: neueId(), name: name, schueler: [], faecher: [] };
       zustand.klassen.push(neu);
       speichereZustand();
-      ui.klasseId = neu.id; ui.fachId = null;
+      ui.klasseId = neu.id; ui.fachId = null; ui.ansicht = "klasse";
       dlg.close(); render();
     });
   }
@@ -720,8 +883,8 @@
       '<div class="feld"><label for="d-typ">Typ</label><select id="d-typ">' +
         fach.lnwTypen.map(function (t) { return '<option value="' + t.id + '">' + escapeHtml(t.name) + '</option>'; }).join("") +
       '</select></div>' +
-      '<div class="feld"><label for="d-titel">Titel (optional)</label><input type="text" id="d-titel" placeholder="z. B. Bruchrechnen"></div>' +
-      '<div class="feld"><label for="d-datum">Datum (optional)</label><input type="date" id="d-datum"></div>' +
+      '<div class="feld"><label for="d-titel">Thema (optional)</label><input type="text" id="d-titel" placeholder="z. B. Bruchrechnen"></div>' +
+      '<div class="feld"><label for="d-datum">Geschrieben am</label><input type="date" id="d-datum" value="' + heuteIso() + '"></div>' +
       '<div class="feld"><label>Gewichtung</label><div class="gewicht-picks" id="d-gewicht-picks"></div>' +
         '<input type="number" id="d-gewicht-custom" step="0.01"></div>' +
       '<div class="dialog-aktionen"><button class="btn btn-ghost" id="d-abbrechen">Abbrechen</button><button class="btn btn-primary" id="d-speichern">Anlegen</button></div>'
@@ -763,6 +926,96 @@
     });
   }
 
+  function dialogSchuelerUeberblick(klasse, schueler) {
+    var inhalt = klasse.faecher.length === 0
+      ? '<p style="color:var(--muted);">Diese Klasse hat noch kein Fach.</p>'
+      : klasse.faecher.map(function (f) {
+          var schnitt = schuelerSchnitt(f, schueler.id);
+          var zeilen = f.lnws.map(function (lnw, i) {
+            var typ = f.lnwTypen.filter(function (t) { return t.id === lnw.typId; })[0];
+            var wert = lnw.noten[schueler.id];
+            return '<div class="ueberblick-zeile"><span>' + (i + 1) + '. ' + escapeHtml(typ ? typ.name : "?") +
+              (lnw.titel ? ' – „' + escapeHtml(lnw.titel) + '“' : '') +
+              (lnw.datum ? ' (' + formatDatumLang(lnw.datum) + ')' : '') + '</span>' +
+              '<span class="note-wert">' + (wert || "–") + '</span></div>';
+          }).join("") || '<p style="color:var(--muted);font-size:0.86rem;">Noch keine Leistungsnachweise.</p>';
+          return '<div class="ueberblick-fach"><h3>' + escapeHtml(f.name) + '<span class="schnitt-badge-dialog">Ø ' + formatSchnitt(schnitt) + '</span></h3>' + zeilen + '</div>';
+        }).join("");
+
+    var dlg = oeffneDialog('<h2>' + escapeHtml(schueler.name) + '</h2>' +
+      '<div class="ueberblick-inhalt">' + inhalt + '</div>' +
+      '<div class="dialog-aktionen"><button class="btn btn-ghost" id="d-schliessen">Schließen</button></div>'
+    );
+    dlg.querySelector("#d-schliessen").addEventListener("click", function () { dlg.close(); });
+  }
+
+  function dialogLnwPlanen(datumIso) {
+    if (zustand.klassen.length === 0) { alert("Lege zuerst eine Klasse an."); return; }
+    var dlg = oeffneDialog(
+      '<h2>Leistungsnachweis planen</h2>' +
+      '<p style="color:var(--muted);font-size:0.86rem;margin-bottom:14px;">am ' + formatDatumLang(datumIso) + '</p>' +
+      '<div class="feld"><label for="d-klasse">Klasse</label><select id="d-klasse"></select></div>' +
+      '<div class="feld"><label for="d-fach">Fach</label><select id="d-fach"></select></div>' +
+      '<div class="feld"><label for="d-typ">Typ</label><select id="d-typ"></select></div>' +
+      '<div class="feld"><label for="d-titel">Thema (optional)</label><input type="text" id="d-titel" placeholder="z. B. Bruchrechnen"></div>' +
+      '<div class="feld"><label>Gewichtung</label><div class="gewicht-picks" id="d-gewicht-picks"></div>' +
+        '<input type="number" id="d-gewicht-custom" step="0.01"></div>' +
+      '<div class="dialog-aktionen"><button class="btn btn-ghost" id="d-abbrechen">Abbrechen</button><button class="btn btn-primary" id="d-speichern">Planen</button></div>'
+    );
+
+    var gewaehltesGewicht = 1;
+    function renderGewichtPicks() {
+      dlg.querySelector("#d-gewicht-picks").innerHTML = GEWICHT_PRESETS.map(function (p) {
+        return '<button type="button" class="gewicht-pick' + (Math.abs(p.wert - gewaehltesGewicht) < 0.001 ? ' aktiv' : '') + '" data-gewicht="' + p.wert + '">' + p.label + '</button>';
+      }).join("");
+      dlg.querySelectorAll("[data-gewicht]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          gewaehltesGewicht = parseFloat(btn.getAttribute("data-gewicht"));
+          dlg.querySelector("#d-gewicht-custom").value = "";
+          renderGewichtPicks();
+        });
+      });
+      dlg.querySelector("#d-gewicht-custom").value = GEWICHT_PRESETS.some(function (p) { return Math.abs(p.wert - gewaehltesGewicht) < 0.001; }) ? "" : gewaehltesGewicht;
+    }
+    dlg.querySelector("#d-gewicht-custom").addEventListener("input", function (e) {
+      if (e.target.value) { gewaehltesGewicht = parseFloat(e.target.value) || 1; renderGewichtPicks(); }
+    });
+
+    function befuelleFach() {
+      var klasse = findeKlasse(dlg.querySelector("#d-klasse").value);
+      var fachSel = dlg.querySelector("#d-fach");
+      fachSel.innerHTML = klasse.faecher.map(function (f) { return '<option value="' + f.id + '">' + escapeHtml(f.name) + '</option>'; }).join("");
+      befuelleTyp();
+    }
+    function befuelleTyp() {
+      var klasse = findeKlasse(dlg.querySelector("#d-klasse").value);
+      var fach = findeFach(klasse, dlg.querySelector("#d-fach").value);
+      var typSel = dlg.querySelector("#d-typ");
+      if (!fach || fach.lnwTypen.length === 0) { typSel.innerHTML = '<option value="">– keine Typen –</option>'; return; }
+      typSel.innerHTML = fach.lnwTypen.map(function (t) { return '<option value="' + t.id + '">' + escapeHtml(t.name) + '</option>'; }).join("");
+      gewaehltesGewicht = fach.lnwTypen[0].gewicht;
+      renderGewichtPicks();
+    }
+
+    dlg.querySelector("#d-klasse").innerHTML = zustand.klassen.map(function (k) { return '<option value="' + k.id + '">' + escapeHtml(k.name) + '</option>'; }).join("");
+    dlg.querySelector("#d-klasse").addEventListener("change", befuelleFach);
+    dlg.querySelector("#d-fach").addEventListener("change", befuelleTyp);
+    befuelleFach();
+
+    dlg.querySelector("#d-abbrechen").addEventListener("click", function () { dlg.close(); });
+    dlg.querySelector("#d-speichern").addEventListener("click", function () {
+      var klasse = findeKlasse(dlg.querySelector("#d-klasse").value);
+      var fach = findeFach(klasse, dlg.querySelector("#d-fach").value);
+      var typId = dlg.querySelector("#d-typ").value;
+      if (!fach || !typId) { alert("Dieses Fach hat noch keine LNW-Typen. Leg zuerst einen an."); return; }
+      var titel = dlg.querySelector("#d-titel").value.trim();
+      fach.lnws.push({ id: neueId(), typId: typId, titel: titel, datum: datumIso, gewicht: gewaehltesGewicht, noten: {} });
+      fach.lnws.sort(function (a, b) { return (a.datum || "9999") < (b.datum || "9999") ? -1 : 1; });
+      speichereZustand();
+      dlg.close(); render();
+    });
+  }
+
   // ---------- Events ----------
 
   function bindeEvents(klasse) {
@@ -771,15 +1024,89 @@
     var leerNeueKlasseBtn = document.getElementById("leer-neue-klasse-btn");
     if (leerNeueKlasseBtn) leerNeueKlasseBtn.addEventListener("click", dialogNeueKlasse);
 
-    document.querySelectorAll(".klasse-item").forEach(function (el) {
+    document.querySelectorAll(".klasse-item[data-klasse-id]").forEach(function (el) {
       el.addEventListener("click", function () {
         ui.klasseId = el.getAttribute("data-klasse-id");
         ui.fachId = null;
+        ui.ansicht = "klasse";
+        render();
+      });
+    });
+    document.querySelectorAll(".klasse-item[data-ansicht]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        ui.ansicht = el.getAttribute("data-ansicht");
         render();
       });
     });
 
-    if (!klasse) return;
+    if (ui.ansicht === "kalender") {
+      var monatZurueck = document.getElementById("monat-zurueck");
+      if (monatZurueck) monatZurueck.addEventListener("click", function () {
+        ui.kalenderMonat--;
+        if (ui.kalenderMonat < 0) { ui.kalenderMonat = 11; ui.kalenderJahr--; }
+        render();
+      });
+      var monatVor = document.getElementById("monat-vor");
+      if (monatVor) monatVor.addEventListener("click", function () {
+        ui.kalenderMonat++;
+        if (ui.kalenderMonat > 11) { ui.kalenderMonat = 0; ui.kalenderJahr++; }
+        render();
+      });
+      var monatHeute = document.getElementById("monat-heute");
+      if (monatHeute) monatHeute.addEventListener("click", function () {
+        var h = new Date(); ui.kalenderJahr = h.getFullYear(); ui.kalenderMonat = h.getMonth(); render();
+      });
+      document.querySelectorAll("[data-tag-plus]").forEach(function (btn) {
+        btn.addEventListener("click", function () { dialogLnwPlanen(btn.getAttribute("data-tag-plus")); });
+      });
+      document.querySelectorAll("[data-termin-klasse]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          ui.klasseId = btn.getAttribute("data-termin-klasse");
+          ui.fachId = btn.getAttribute("data-termin-fach");
+          ui.ansicht = "klasse";
+          render();
+        });
+      });
+    }
+
+    if (ui.ansicht === "stundenplan") {
+      var spDatei = document.getElementById("stundenplan-datei");
+      var hochladenBtn = document.getElementById("stundenplan-hochladen-btn");
+      var ersetzenBtn = document.getElementById("stundenplan-ersetzen-btn");
+      var entfernenBtn = document.getElementById("stundenplan-entfernen-btn");
+      if (hochladenBtn && spDatei) hochladenBtn.addEventListener("click", function () { spDatei.click(); });
+      if (ersetzenBtn && spDatei) ersetzenBtn.addEventListener("click", function () { spDatei.click(); });
+      if (spDatei) spDatei.addEventListener("change", function () {
+        var datei = spDatei.files[0];
+        if (!datei) return;
+        var reader = new FileReader();
+        reader.onload = function () {
+          var alt = zustand.stundenplan;
+          zustand.stundenplan = { dataUrl: reader.result, dateiname: datei.name, typ: datei.type, hochgeladenAm: heuteIso() };
+          if (!speichereZustand()) {
+            zustand.stundenplan = alt;
+            alert("Die Datei ist zu groß für den lokalen Speicher. Versuch ein kleineres Foto oder eine komprimierte PDF.");
+            return;
+          }
+          render();
+        };
+        reader.readAsDataURL(datei);
+      });
+      if (entfernenBtn) entfernenBtn.addEventListener("click", function () {
+        if (!confirm("Stundenplan entfernen?")) return;
+        zustand.stundenplan = null; speichereZustand(); render();
+      });
+    }
+
+    document.querySelectorAll("[data-schueler-uebersicht]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        if (!klasse) return;
+        var s = klasse.schueler.filter(function (x) { return x.id === el.getAttribute("data-schueler-uebersicht"); })[0];
+        if (s) dialogSchuelerUeberblick(klasse, s);
+      });
+    });
+
+    if (!klasse || ui.ansicht !== "klasse") return;
 
     var schuelerBtn = document.getElementById("schueler-verwalten-btn");
     if (schuelerBtn) schuelerBtn.addEventListener("click", function () { dialogSchuelerVerwalten(klasse); });
