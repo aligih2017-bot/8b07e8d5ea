@@ -158,6 +158,7 @@
   .tabellen-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
   table.notentabelle { border-collapse: collapse; width: 100%; font-size: 0.86rem; }
   table.notentabelle th, table.notentabelle td { padding: 9px 12px; text-align: center; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  table.notentabelle th:not(.schueler-col):not(.schnitt-col), table.notentabelle td:not(.schueler-col):not(.schnitt-col) { text-align: left; }
   table.notentabelle thead th { font-weight: 600; vertical-align: bottom; background: var(--surface); position: sticky; top: 0; z-index: 2; }
   table.notentabelle th.schueler-col, table.notentabelle td.schueler-col {
     text-align: left; position: sticky; left: 0; background: var(--surface); z-index: 3; border-right: 1px solid var(--border); font-weight: 500;
@@ -170,11 +171,11 @@
   table.notentabelle tbody tr:hover td.schueler-col { background: var(--surface-2); }
   table.notentabelle td.schnitt-col, table.notentabelle th.schnitt-col { font-weight: 700; background: var(--accent-tint); color: var(--accent); }
   table.notentabelle tfoot td { font-weight: 700; background: var(--surface-2); border-top: 2px solid var(--border); border-bottom: none; }
-  .lnw-head { display: flex; flex-direction: column; gap: 2px; align-items: center; min-width: 110px; max-width: 160px; }
+  .lnw-head { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; min-width: 110px; max-width: 160px; }
   .lnw-head .nr { color: var(--muted); font-weight: 500; font-size: 0.74rem; }
   .lnw-head .typ { font-weight: 600; }
   .lnw-head .thema { color: var(--ink); font-weight: 500; font-style: italic; font-size: 0.76rem; max-width: 150px; white-space: normal; }
-  .lnw-head .zusatz { color: var(--muted); font-weight: 400; font-size: 0.72rem; white-space: normal; text-align: center; }
+  .lnw-head .zusatz { color: var(--muted); font-weight: 400; font-size: 0.72rem; white-space: normal; text-align: left; }
   .lnw-head-aktionen { display: flex; gap: 2px; }
   .lnw-head-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.72rem; padding: 2px 6px; border-radius: 5px; }
   .lnw-head-btn:hover { color: var(--accent); background: var(--accent-tint); }
@@ -300,15 +301,12 @@
     .tabellen-wrap { border: none; }
     select.noten-select { border: none; appearance: none; background: none; }
     @page { size: landscape; margin: 14mm; }
-    @page lnw-einzeln { size: A4 portrait; margin: 12mm; }
     body.druck-einzeln .shell { display: none !important; }
     body.druck-einzeln #druck-lnw { display: block; }
+    body.druck-einzeln .druck-lnw-seite { display: block; }
   }
 
-  .druck-lnw-seite { display: none; }
-  body.druck-einzeln .druck-lnw-seite {
-    display: block; page: lnw-einzeln; font-family: var(--sans); color: #000; background: #fff;
-  }
+  .druck-lnw-seite { display: none; font-family: var(--sans); color: #000; background: #fff; }
   .druck-lnw-seite h1 { font-family: var(--serif); font-size: 1.3rem; margin-bottom: 2px; }
   .druck-lnw-seite h2 { font-family: var(--serif); font-size: 1.05rem; font-weight: 600; margin: 0 0 2px; }
   .druck-lnw-meta { font-size: 0.82rem; color: #333; margin-bottom: 18px; }
@@ -824,12 +822,20 @@
     if (!klasse) return;
     document.getElementById("druck-lnw").innerHTML = baueLnwDruckHtml(klasse, fach, lnw);
     document.body.classList.add("druck-einzeln");
+
+    var seitenStil = document.createElement("style");
+    seitenStil.id = "druck-einzeln-seite";
+    seitenStil.textContent = "@media print { @page { size: A4 portrait; margin: 12mm; } }";
+    document.head.appendChild(seitenStil);
+
     function zurueck() {
       window.removeEventListener("afterprint", zurueck);
       document.body.classList.remove("druck-einzeln");
+      var alt = document.getElementById("druck-einzeln-seite");
+      if (alt) alt.remove();
     }
     window.addEventListener("afterprint", zurueck);
-    window.print();
+    setTimeout(function () { window.print(); }, 50);
     setTimeout(zurueck, 15000);
   }
 
