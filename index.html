@@ -317,10 +317,14 @@
   .druck-balken-saeule { flex: 1; display: flex; flex-direction: column; align-items: center; }
   .druck-balken-zahl { font-size: 0.72rem; margin-bottom: 3px; }
   .druck-balken-spur { height: 100px; width: 100%; display: flex; align-items: flex-end; justify-content: center; }
-  .druck-balken { width: 55%; background: #333; min-height: 2px; }
+  .druck-balken {
+    width: 55%; min-height: 2px; background: #333; border: 1.5px solid #000;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact;
+  }
   .druck-balken-label { font-size: 0.8rem; margin-top: 4px; font-weight: 700; }
   .druck-schueler-titel { font-size: 0.82rem; font-weight: 700; margin-bottom: 6px; }
-  .druck-schuelerliste { columns: 2; column-gap: 26px; font-size: 0.84rem; }
+  .druck-schuelerliste-spalten { display: flex; gap: 26px; align-items: flex-start; }
+  .druck-schuelerliste { flex: 1; font-size: 0.84rem; min-width: 0; }
   .druck-schueler-zeile {
     display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; border-bottom: 1px solid #ccc; break-inside: avoid;
   }
@@ -806,15 +810,25 @@
         '<div class="druck-balken-label">' + (i + 1) + '</div></div>';
     }).join("");
 
+    var spaltenAnzahl = zeilen.length > 24 ? 3 : 2;
+    var proSpalte = Math.ceil(zeilen.length / spaltenAnzahl) || 1;
+    var spalten = [];
+    for (var i = 0; i < spaltenAnzahl; i++) {
+      spalten.push(zeilen.slice(i * proSpalte, (i + 1) * proSpalte));
+    }
+    var listeHtml = spalten.map(function (spalte) {
+      return '<div class="druck-schuelerliste">' + spalte.map(function (z) {
+        return '<div class="druck-schueler-zeile"><span>' + escapeHtml(z.name) + '</span><span>' + escapeHtml(z.wert) + '</span></div>';
+      }).join("") + '</div>';
+    }).join("");
+
     return '<div class="druck-lnw-seite">' +
       '<h1>' + escapeHtml(klasse.name) + ' – ' + escapeHtml(fach.name) + '</h1>' +
       '<h2>' + escapeHtml(typ ? typ.name : "") + (lnw.titel ? ' – „' + escapeHtml(lnw.titel) + '“' : '') + '</h2>' +
       '<p class="druck-lnw-meta">' + (lnw.datum ? 'geschrieben am ' + formatDatumLang(lnw.datum) : 'kein Datum') + ' · Gewichtung ' + formatGewicht(lnw.gewicht) + '</p>' +
       '<div class="druck-diagramm">' + balken + '</div>' +
       '<p class="druck-schueler-titel">Noten</p>' +
-      '<div class="druck-schuelerliste">' + zeilen.map(function (z) {
-        return '<div class="druck-schueler-zeile"><span>' + escapeHtml(z.name) + '</span><span>' + escapeHtml(z.wert) + '</span></div>';
-      }).join("") + '</div>' +
+      '<div class="druck-schuelerliste-spalten">' + listeHtml + '</div>' +
       '</div>';
   }
 
