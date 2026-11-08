@@ -311,11 +311,12 @@
   .druck-lnw-seite h2 { font-family: var(--serif); font-size: 1.05rem; font-weight: 600; margin: 0 0 2px; }
   .druck-lnw-meta { font-size: 0.82rem; color: #333; margin-bottom: 18px; }
   .druck-diagramm {
-    display: flex; align-items: flex-end; gap: 10px; height: 120px; border-bottom: 1.5px solid #333;
+    display: flex; align-items: flex-end; gap: 10px; border-bottom: 1.5px solid #333;
     margin-bottom: 22px; padding: 0 8px;
   }
-  .druck-balken-saeule { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
-  .druck-balken-zahl { font-size: 0.72rem; margin-bottom: 2px; }
+  .druck-balken-saeule { flex: 1; display: flex; flex-direction: column; align-items: center; }
+  .druck-balken-zahl { font-size: 0.72rem; margin-bottom: 3px; }
+  .druck-balken-spur { height: 100px; width: 100%; display: flex; align-items: flex-end; justify-content: center; }
   .druck-balken { width: 55%; background: #333; min-height: 2px; }
   .druck-balken-label { font-size: 0.8rem; margin-top: 4px; font-weight: 700; }
   .druck-schueler-titel { font-size: 0.82rem; font-weight: 700; margin-bottom: 6px; }
@@ -801,7 +802,7 @@
     var balken = verteilung.map(function (anzahl, i) {
       var hoehe = Math.round((anzahl / maxAnzahl) * 100);
       return '<div class="druck-balken-saeule"><div class="druck-balken-zahl">' + anzahl + '</div>' +
-        '<div class="druck-balken" style="height:' + hoehe + '%"></div>' +
+        '<div class="druck-balken-spur"><div class="druck-balken" style="height:' + hoehe + '%"></div></div>' +
         '<div class="druck-balken-label">' + (i + 1) + '</div></div>';
     }).join("");
 
