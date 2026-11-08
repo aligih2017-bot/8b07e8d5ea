@@ -182,12 +182,12 @@
   table.notentabelle tbody tr:hover .schueler-entfernen-btn { opacity: 1; }
   .schueler-entfernen-btn:hover { color: var(--danger); background: var(--danger-tint); }
   table.notentabelle tfoot td { font-weight: 700; background: var(--surface-2); border-top: 2px solid var(--border); border-bottom: none; }
-  .lnw-head { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; min-width: 110px; max-width: 160px; }
-  .lnw-head .nr { color: var(--muted); font-weight: 500; font-size: 0.74rem; }
-  .lnw-head .typ { font-weight: 600; }
-  .lnw-head .thema { color: var(--ink); font-weight: 500; font-style: italic; font-size: 0.76rem; max-width: 150px; white-space: normal; }
-  .lnw-head .zusatz { color: var(--muted); font-weight: 400; font-size: 0.72rem; white-space: normal; text-align: left; }
-  .lnw-head-aktionen { display: flex; gap: 2px; }
+  .lnw-head { display: flex; flex-direction: column; gap: 3px; align-items: flex-start; min-width: 110px; max-width: 160px; }
+  .lnw-head .nr { color: var(--muted); font-weight: 600; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .lnw-head .typ { font-weight: 700; font-size: 0.88rem; }
+  .lnw-head .thema { color: var(--muted); font-weight: 500; font-size: 0.78rem; max-width: 150px; white-space: normal; }
+  .lnw-head .zusatz { color: var(--muted); font-weight: 400; font-size: 0.74rem; white-space: normal; }
+  .lnw-head-aktionen { display: flex; gap: 2px; margin-top: 3px; padding-top: 5px; border-top: 1px solid var(--border); width: 100%; }
   .lnw-head-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.72rem; padding: 2px 6px; border-radius: 5px; }
   .lnw-head-btn:hover { color: var(--accent); background: var(--accent-tint); }
   .lnw-head-btn[data-lnw-loeschen]:hover { color: var(--danger); background: var(--danger-tint); }
@@ -197,6 +197,10 @@
     font-family: var(--sans); font-size: 0.86rem; text-align: center; cursor: pointer;
   }
   select.noten-select:focus { outline: none; border-color: var(--accent); }
+  .note-gesperrt {
+    display: inline-block; width: 62px; padding: 5px 2px; text-align: center; font-size: 0.86rem; font-weight: 600;
+    color: var(--ink);
+  }
 
   .leeres-fach { padding: 48px 20px; text-align: center; color: var(--muted); }
   .leeres-fach p { max-width: 40ch; margin: 0 auto 16px; line-height: 1.55; }
@@ -742,6 +746,9 @@
     html += '<h2 class="nur-druck">' + escapeHtml(fach.name) + '</h2>';
     html += '<div class="toolbar druck-ausblenden"><div class="toolbar-aktionen">' +
       '<button class="btn btn-primary btn-sm" id="neuer-lnw-btn"' + (klasse.schueler.length === 0 ? ' disabled' : '') + '>+ Neuer Leistungsnachweis</button>' +
+      (fach.notenEntsperrt
+        ? '<button class="btn btn-primary btn-sm" id="noten-sperren-btn">Fertig</button>'
+        : '<button class="btn btn-ghost btn-sm" id="noten-bearbeiten-btn">Noten bearbeiten</button>') +
       '<button class="btn btn-ghost btn-sm" id="typen-verwalten-btn">LNW-Typen verwalten</button>' +
       '<button class="btn btn-ghost btn-sm" id="fach-umbenennen-btn">Fach umbenennen</button>' +
       '<button class="btn btn-danger-ghost btn-sm" id="fach-loeschen-btn">Fach löschen</button>' +
@@ -771,8 +778,8 @@
       html += '<th><div class="lnw-head">' +
         '<span class="nr">' + (i + 1) + '. LNW</span>' +
         '<span class="typ">' + escapeHtml(typName) + '</span>' +
-        (lnw.titel ? '<span class="thema">Thema: „' + escapeHtml(lnw.titel) + '“</span>' : '') +
-        '<span class="zusatz">' + (lnw.datum ? formatDatumLang(lnw.datum) : 'kein Datum') + ' · ' + formatGewicht(lnw.gewicht) + '</span>' +
+        (lnw.titel ? '<span class="thema">„' + escapeHtml(lnw.titel) + '“</span>' : '') +
+        '<span class="zusatz">' + (lnw.datum ? formatDatumLang(lnw.datum) : 'kein Datum') + '</span>' +
         '<div class="lnw-head-aktionen druck-ausblenden">' +
         '<button class="lnw-head-btn" data-lnw-drucken="' + lnw.id + '">Drucken</button>' +
         '<button class="lnw-head-btn" data-lnw-loeschen="' + lnw.id + '">Löschen</button>' +
@@ -785,10 +792,14 @@
         '<td class="schueler-col schueler-klickbar" data-schueler-uebersicht="' + s.id + '">' + escapeHtml(s.name) + '</td>';
       fach.lnws.forEach(function (lnw) {
         var wert = lnw.noten[s.id] || "";
-        html += '<td><select class="noten-select" data-lnw-id="' + lnw.id + '" data-schueler-id="' + s.id + '">' +
-          '<option value=""' + (wert === "" ? " selected" : "") + '>–</option>' +
-          NOTEN_OPTIONEN.map(function (n) { return '<option value="' + n + '"' + (wert === n ? " selected" : "") + '>' + n + '</option>'; }).join("") +
-          '</select></td>';
+        if (wert && !fach.notenEntsperrt) {
+          html += '<td><span class="note-gesperrt">' + escapeHtml(wert) + '</span></td>';
+        } else {
+          html += '<td><select class="noten-select" data-lnw-id="' + lnw.id + '" data-schueler-id="' + s.id + '">' +
+            '<option value=""' + (wert === "" ? " selected" : "") + '>–</option>' +
+            NOTEN_OPTIONEN.map(function (n) { return '<option value="' + n + '"' + (wert === n ? " selected" : "") + '>' + n + '</option>'; }).join("") +
+            '</select></td>';
+        }
       });
       var schnitt = schuelerSchnitt(fach, s.id);
       html += '<td class="schnitt-col">' + formatSchnitt(schnitt) + '</td>' +
@@ -1433,6 +1444,14 @@
       if (neuerLnwBtn) neuerLnwBtn.addEventListener("click", function () { dialogNeuerLnw(fach); });
       var leeresFachLnwBtn = document.getElementById("leeres-fach-lnw-btn");
       if (leeresFachLnwBtn) leeresFachLnwBtn.addEventListener("click", function () { dialogNeuerLnw(fach); });
+      var notenBearbeitenBtn = document.getElementById("noten-bearbeiten-btn");
+      if (notenBearbeitenBtn) notenBearbeitenBtn.addEventListener("click", function () {
+        fach.notenEntsperrt = true; speichereZustand(); render();
+      });
+      var notenSperrenBtn = document.getElementById("noten-sperren-btn");
+      if (notenSperrenBtn) notenSperrenBtn.addEventListener("click", function () {
+        fach.notenEntsperrt = false; speichereZustand(); render();
+      });
       var typenBtn = document.getElementById("typen-verwalten-btn");
       if (typenBtn) typenBtn.addEventListener("click", function () { dialogTypenVerwalten(fach); });
       var fachUmbenennenBtn = document.getElementById("fach-umbenennen-btn");
