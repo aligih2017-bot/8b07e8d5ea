@@ -850,7 +850,7 @@
       if (alt) alt.remove();
     }
     window.addEventListener("afterprint", zurueck);
-    setTimeout(function () { window.print(); }, 50);
+    window.print();
     setTimeout(zurueck, 15000);
   }
 
