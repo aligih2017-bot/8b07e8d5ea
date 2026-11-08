@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Notenbuch</title>
+<title>Notenbuch SJ 26/27</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -86,7 +86,8 @@
     .sidebar .klassen-liste { display: flex; flex-direction: row; gap: 8px; flex: 1; }
     .sidebar .neue-klasse-btn { flex: 0 0 auto; }
   }
-  .brand { font-family: var(--serif); font-size: 1.3rem; font-weight: 700; padding: 0 4px; }
+  .brand { font-family: var(--serif); font-size: 1.3rem; font-weight: 700; padding: 0 4px; line-height: 1.15; }
+  .brand .sj { display: block; font-family: var(--sans); font-size: 0.72rem; font-weight: 600; color: var(--muted); margin-top: 2px; }
   .brand span { color: var(--accent); }
   .klassen-liste { display: flex; flex-direction: column; gap: 3px; }
   .werkzeuge-liste { padding-bottom: 12px; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
@@ -259,6 +260,26 @@
   .tag-plus:hover { background: var(--accent-tint); color: var(--accent); }
   .kalender-hinweis { margin-top: 14px; font-size: 0.82rem; color: var(--muted); }
 
+  .jahr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+  .mini-monat {
+    text-align: left; border: 1.5px solid var(--border); border-radius: var(--radius); background: var(--surface);
+    padding: 12px; cursor: pointer; font-family: var(--sans); transition: border-color .15s;
+  }
+  .mini-monat:hover { border-color: var(--accent); }
+  .mini-monat h3 { font-family: var(--serif); font-size: 0.94rem; margin-bottom: 8px; }
+  .mini-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; font-size: 0.64rem; }
+  .mini-wd { text-align: center; color: var(--muted); font-weight: 600; padding-bottom: 3px; }
+  .mini-tag { text-align: center; padding: 2px 0; border-radius: 3px; position: relative; color: var(--ink); }
+  .mini-tag.ferien { background: var(--surface-2); }
+  .mini-tag.wochenende { background: var(--wochenende-bg); color: var(--wochenende-ink); }
+  .mini-tag.wochenende.ferien { background: color-mix(in oklch, var(--wochenende-bg), black 15%); }
+  .mini-tag.heute { outline: 1.5px solid var(--accent); outline-offset: -1px; font-weight: 700; }
+  .mini-tag.hat-termin::after {
+    content: ""; position: absolute; bottom: 1px; left: 50%; transform: translateX(-50%);
+    width: 3px; height: 3px; border-radius: 50%; background: var(--accent);
+  }
+  .mini-tag.wochenende.hat-termin::after { background: var(--wochenende-ink); }
+
   .stundenplan-vorschau { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--surface); max-width: 720px; }
   .stundenplan-vorschau img { width: 100%; display: block; }
   .stundenplan-vorschau embed { width: 100%; height: 70vh; display: block; }
@@ -357,7 +378,7 @@
 
   var zustand = ladeZustand();
   var heute = new Date();
-  var ui = { klasseId: null, fachId: null, ansicht: "klasse", kalenderJahr: heute.getFullYear(), kalenderMonat: heute.getMonth() };
+  var ui = { klasseId: null, fachId: null, ansicht: "klasse", kalenderJahr: heute.getFullYear(), kalenderMonat: heute.getMonth(), kalenderModus: "monat" };
 
   function findeKlasse(id) {
     for (var i = 0; i < zustand.klassen.length; i++) { if (zustand.klassen[i].id === id) return zustand.klassen[i]; }
@@ -465,7 +486,7 @@
         '<span>' + label + '</span></div>';
     }).join("");
     return '<nav class="sidebar">' +
-      '<div class="brand">Noten<span>buch</span></div>' +
+      '<div class="brand">Noten<span>buch</span><span class="sj">SJ 26/27</span></div>' +
       '<div class="klassen-liste werkzeuge-liste">' + werkzeuge + '</div>' +
       '<div class="klassen-liste">' + liste + '</div>' +
       '<button class="neue-klasse-btn" id="neue-klasse-btn">+ Neue Klasse</button>' +
@@ -507,7 +528,56 @@
     return "noch " + tage + (tage === 1 ? " Tag" : " Tage") + " bis " + kommende.name;
   }
 
+  function schuljahrStart(jahr, monat) {
+    return monat < 8 ? jahr - 1 : jahr; // Schuljahr beginnt im September (Index 8)
+  }
+
+  function renderJahresuebersicht() {
+    var startJahr = schuljahrStart(ui.kalenderJahr, ui.kalenderMonat);
+    var alleLnws = alleLnwsMitKontext();
+    var monate = [];
+    for (var i = 0; i < 12; i++) {
+      monate.push({ jahr: startJahr + Math.floor((8 + i) / 12), monat: (8 + i) % 12 });
+    }
+
+    var html = '<div class="kalender-kopf druck-ausblenden">' +
+      '<button class="btn btn-ghost btn-sm" id="schuljahr-zurueck">←</button>' +
+      '<h1>Schuljahr ' + startJahr + '/' + (startJahr + 1) + '</h1>' +
+      '<button class="btn btn-ghost btn-sm" id="schuljahr-vor">→</button>' +
+      '<button class="btn btn-ghost btn-sm" id="monatsansicht-btn">Monatsansicht</button>' +
+      '</div>';
+
+    html += '<div class="jahr-grid">';
+    monate.forEach(function (mo) { html += renderMiniMonat(mo.jahr, mo.monat, alleLnws); });
+    html += '</div>';
+    html += '<p class="kalender-hinweis druck-ausblenden">Auf einen Monat klicken, um ihn im Detail zu öffnen.</p>';
+    return html;
+  }
+
+  function renderMiniMonat(jahr, monat, alleLnws) {
+    var ersterTag = new Date(jahr, monat, 1);
+    var anzahlTage = new Date(jahr, monat + 1, 0).getDate();
+    var startOffset = (ersterTag.getDay() + 6) % 7;
+    var html = '<button class="mini-monat" data-mini-jahr="' + jahr + '" data-mini-monat="' + monat + '">' +
+      '<h3>' + MONATSNAMEN[monat] + ' ' + jahr + '</h3><div class="mini-grid">';
+    WOCHENTAGE.forEach(function (w) { html += '<span class="mini-wd">' + w.charAt(0) + '</span>'; });
+    for (var i = 0; i < startOffset; i++) html += '<span class="mini-tag leer"></span>';
+    for (var tag = 1; tag <= anzahlTage; tag++) {
+      var iso = jahr + "-" + String(monat + 1).padStart(2, "0") + "-" + String(tag).padStart(2, "0");
+      var ferien = ferienAmTag(iso);
+      var wIdx = (startOffset + tag - 1) % 7;
+      var we = wIdx === 5 || wIdx === 6;
+      var hatTermin = alleLnws.some(function (e) { return e.lnw.datum === iso; });
+      var istHeute = iso === heuteIso();
+      html += '<span class="mini-tag' + (ferien ? ' ferien' : '') + (we ? ' wochenende' : '') + (hatTermin ? ' hat-termin' : '') + (istHeute ? ' heute' : '') + '">' + tag + '</span>';
+    }
+    html += '</div></button>';
+    return html;
+  }
+
   function renderKalender() {
+    if (ui.kalenderModus === "jahr") return renderJahresuebersicht();
+
     var jahr = ui.kalenderJahr, monat = ui.kalenderMonat;
     var ersterTag = new Date(jahr, monat, 1);
     var anzahlTage = new Date(jahr, monat + 1, 0).getDate();
@@ -519,6 +589,7 @@
       '<h1>' + MONATSNAMEN[monat] + " " + jahr + '</h1>' +
       '<button class="btn btn-ghost btn-sm" id="monat-vor">→</button>' +
       '<button class="btn btn-ghost btn-sm" id="monat-heute">Heute</button>' +
+      '<button class="btn btn-ghost btn-sm" id="jahresuebersicht-btn">Gesamtübersicht Schuljahr</button>' +
       '</div>';
 
     html += '<div class="kalender-grid-wrap"><div class="kalender-grid">';
@@ -1105,6 +1176,26 @@
       var monatHeute = document.getElementById("monat-heute");
       if (monatHeute) monatHeute.addEventListener("click", function () {
         var h = new Date(); ui.kalenderJahr = h.getFullYear(); ui.kalenderMonat = h.getMonth(); render();
+      });
+      var jahresuebersichtBtn = document.getElementById("jahresuebersicht-btn");
+      if (jahresuebersichtBtn) jahresuebersichtBtn.addEventListener("click", function () { ui.kalenderModus = "jahr"; render(); });
+      var monatsansichtBtn = document.getElementById("monatsansicht-btn");
+      if (monatsansichtBtn) monatsansichtBtn.addEventListener("click", function () { ui.kalenderModus = "monat"; render(); });
+      var schuljahrZurueck = document.getElementById("schuljahr-zurueck");
+      if (schuljahrZurueck) schuljahrZurueck.addEventListener("click", function () {
+        ui.kalenderJahr = schuljahrStart(ui.kalenderJahr, ui.kalenderMonat) - 1; ui.kalenderMonat = 8; render();
+      });
+      var schuljahrVor = document.getElementById("schuljahr-vor");
+      if (schuljahrVor) schuljahrVor.addEventListener("click", function () {
+        ui.kalenderJahr = schuljahrStart(ui.kalenderJahr, ui.kalenderMonat) + 1; ui.kalenderMonat = 8; render();
+      });
+      document.querySelectorAll(".mini-monat").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          ui.kalenderJahr = parseInt(btn.getAttribute("data-mini-jahr"), 10);
+          ui.kalenderMonat = parseInt(btn.getAttribute("data-mini-monat"), 10);
+          ui.kalenderModus = "monat";
+          render();
+        });
       });
       document.querySelectorAll("[data-tag-plus]").forEach(function (btn) {
         btn.addEventListener("click", function () { dialogLnwPlanen(btn.getAttribute("data-tag-plus")); });
