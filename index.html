@@ -358,9 +358,10 @@
 
   var SPEICHER_KEY = "notenbuch-v1";
 
-  var NOTEN_OPTIONEN = ["1+","1","1-","2+","2","2-","3+","3","3-","4+","4","4-","5+","5","5-","6"];
+  var NOTEN_OPTIONEN = ["1+","1","1-","2+","2","2-","3+","3","3-","4+","4","4-","5+","5","5-","6","n.a."];
   var NOTEN_ZAHL = {};
   NOTEN_OPTIONEN.forEach(function (label) {
+    if (label === "n.a.") { NOTEN_ZAHL[label] = 6; return; }
     var basis = parseInt(label[0], 10);
     var tendenz = label.length > 1 ? label[1] : null;
     var zahl = basis;
@@ -840,7 +841,7 @@
     var verteilung = [0, 0, 0, 0, 0, 0];
     var zeilen = sichtbare.map(function (s, idx) {
       var wert = lnw.noten[s.id];
-      if (wert) { verteilung[parseInt(wert.charAt(0), 10) - 1]++; }
+      if (wert) { verteilung[(wert === "n.a." ? 6 : parseInt(wert.charAt(0), 10)) - 1]++; }
       return { nr: idx + 1, name: s.name, wert: wert || "–" };
     });
     var maxAnzahl = Math.max.apply(null, verteilung.concat([1]));
