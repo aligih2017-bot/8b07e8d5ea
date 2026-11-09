@@ -24,6 +24,19 @@
     --danger-tint: oklch(94% 0.03 25);
     --wochenende-bg: oklch(32% 0.012 255);
     --wochenende-ink: oklch(95% 0.006 255);
+    --ferien-bg: oklch(91% 0.1 55);
+    --ferien-ink: oklch(34% 0.1 42);
+    --ferien-weekend-bg: oklch(42% 0.1 42);
+    --termin-geplant: oklch(50% 0.15 255);
+    --termin-geplant-tint: oklch(91% 0.045 255);
+    --termin-geschrieben: oklch(48% 0.13 150);
+    --termin-geschrieben-tint: oklch(90% 0.06 150);
+    --farbe-lila: oklch(48% 0.16 300); --farbe-lila-tint: oklch(92% 0.045 300);
+    --farbe-pink: oklch(55% 0.18 350); --farbe-pink-tint: oklch(92% 0.045 350);
+    --farbe-tuerkis: oklch(48% 0.1 195); --farbe-tuerkis-tint: oklch(91% 0.04 195);
+    --farbe-amber: oklch(56% 0.15 75); --farbe-amber-tint: oklch(91% 0.05 75);
+    --farbe-rot: oklch(52% 0.18 25); --farbe-rot-tint: oklch(92% 0.045 25);
+    --farbe-grau: oklch(40% 0.012 255); --farbe-grau-tint: oklch(90% 0.006 255);
     --shadow: 0 1px 2px oklch(23% 0.012 255 / 0.06), 0 6px 20px oklch(23% 0.012 255 / 0.07);
     --radius: 10px;
     --serif: 'Source Serif 4', Georgia, serif;
@@ -44,6 +57,17 @@
       --warn: oklch(74% 0.14 80);
       --danger: oklch(72% 0.15 25);
       --danger-tint: oklch(32% 0.07 25);
+      --ferien-bg: oklch(33% 0.08 55);
+      --ferien-ink: oklch(88% 0.09 60);
+      --ferien-weekend-bg: oklch(26% 0.07 45);
+      --termin-geplant: oklch(74% 0.1 250); --termin-geplant-tint: oklch(28% 0.06 250);
+      --termin-geschrieben: oklch(72% 0.12 150); --termin-geschrieben-tint: oklch(27% 0.06 150);
+      --farbe-lila: oklch(76% 0.12 300); --farbe-lila-tint: oklch(30% 0.07 300);
+      --farbe-pink: oklch(76% 0.13 350); --farbe-pink-tint: oklch(30% 0.07 350);
+      --farbe-tuerkis: oklch(74% 0.09 195); --farbe-tuerkis-tint: oklch(28% 0.05 195);
+      --farbe-amber: oklch(78% 0.13 80); --farbe-amber-tint: oklch(30% 0.06 80);
+      --farbe-rot: oklch(74% 0.13 25); --farbe-rot-tint: oklch(30% 0.07 25);
+      --farbe-grau: oklch(78% 0.01 255); --farbe-grau-tint: oklch(34% 0.01 255);
       --shadow: 0 1px 2px oklch(0% 0 0 / 0.3), 0 10px 30px oklch(0% 0 0 / 0.35);
       color-scheme: dark;
     }
@@ -53,6 +77,15 @@
     --ink: oklch(94% 0.006 255); --muted: oklch(68% 0.012 255); --border: oklch(34% 0.012 255);
     --accent: oklch(72% 0.11 210); --accent-ink: oklch(16% 0.02 210); --accent-tint: oklch(30% 0.05 210);
     --ok: oklch(70% 0.14 150); --warn: oklch(74% 0.14 80); --danger: oklch(72% 0.15 25); --danger-tint: oklch(32% 0.07 25);
+    --ferien-bg: oklch(33% 0.08 55); --ferien-ink: oklch(88% 0.09 60); --ferien-weekend-bg: oklch(26% 0.07 45);
+    --termin-geplant: oklch(74% 0.1 250); --termin-geplant-tint: oklch(28% 0.06 250);
+    --termin-geschrieben: oklch(72% 0.12 150); --termin-geschrieben-tint: oklch(27% 0.06 150);
+    --farbe-lila: oklch(76% 0.12 300); --farbe-lila-tint: oklch(30% 0.07 300);
+    --farbe-pink: oklch(76% 0.13 350); --farbe-pink-tint: oklch(30% 0.07 350);
+    --farbe-tuerkis: oklch(74% 0.09 195); --farbe-tuerkis-tint: oklch(28% 0.05 195);
+    --farbe-amber: oklch(78% 0.13 80); --farbe-amber-tint: oklch(30% 0.06 80);
+    --farbe-rot: oklch(74% 0.13 25); --farbe-rot-tint: oklch(30% 0.07 25);
+    --farbe-grau: oklch(78% 0.01 255); --farbe-grau-tint: oklch(34% 0.01 255);
     color-scheme: dark;
   }
   * { box-sizing: border-box; }
@@ -253,30 +286,55 @@
   .kalender-wochentag { background: var(--surface); padding: 8px 6px; font-size: 0.76rem; font-weight: 600; color: var(--muted); text-align: center; }
   .kalender-tag { background: var(--bg); min-height: 92px; padding: 6px; display: flex; flex-direction: column; gap: 4px; position: relative; }
   .kalender-tag.leer { background: var(--surface); }
-  .kalender-tag.ferien { background: var(--surface-2); }
+  .kalender-tag.ferien { background: var(--ferien-bg); }
   .kalender-tag.wochenende { background: var(--wochenende-bg); }
-  .kalender-tag.wochenende.ferien { background: color-mix(in oklch, var(--wochenende-bg), black 15%); }
+  .kalender-tag.wochenende.ferien { background: var(--ferien-weekend-bg); }
   .kalender-tag.leer.wochenende { background: color-mix(in oklch, var(--wochenende-bg), var(--surface) 40%); }
   .kalender-tag.wochenende .tagnummer, .kalender-tag.wochenende .ferien-label { color: var(--wochenende-ink); }
+  .kalender-tag.termin-geplant { background: var(--termin-geplant-tint); }
+  .kalender-tag.termin-geschrieben { background: var(--termin-geschrieben-tint); }
   .kalender-tag.heute .tagnummer { background: var(--accent); color: var(--accent-ink); border-radius: 999px; padding: 0 6px; }
   .tagnummer { font-size: 0.78rem; font-weight: 600; align-self: flex-start; }
-  .ferien-label { font-size: 0.64rem; color: var(--muted); line-height: 1.2; }
+  .ferien-label { font-size: 0.64rem; color: var(--ferien-ink); font-weight: 600; line-height: 1.2; }
   .kalender-woche-info {
     grid-column: 1 / -1; background: var(--surface); padding: 5px 12px; font-size: 0.74rem; font-weight: 600;
     color: var(--muted); text-align: right;
   }
   .termin-chip {
     font-family: var(--sans); font-size: 0.66rem; line-height: 1.25; text-align: left; background: var(--accent-tint); color: var(--accent);
-    border: none; border-radius: 6px; padding: 3px 5px; cursor: pointer; font-weight: 600;
+    border: none; border-radius: 6px; padding: 3px 5px; cursor: pointer; font-weight: 600; display: block; width: 100%;
   }
   .termin-chip:hover { filter: brightness(0.95); }
+  .termin-chip.geplant { background: var(--termin-geplant-tint); color: var(--termin-geplant); }
+  .termin-chip.geschrieben { background: var(--termin-geschrieben-tint); color: var(--termin-geschrieben); }
+  .termin-chip.farbe-lila { background: var(--farbe-lila-tint); color: var(--farbe-lila); }
+  .termin-chip.farbe-pink { background: var(--farbe-pink-tint); color: var(--farbe-pink); }
+  .termin-chip.farbe-tuerkis { background: var(--farbe-tuerkis-tint); color: var(--farbe-tuerkis); }
+  .termin-chip.farbe-amber { background: var(--farbe-amber-tint); color: var(--farbe-amber); }
+  .termin-chip.farbe-rot { background: var(--farbe-rot-tint); color: var(--farbe-rot); }
+  .termin-chip.farbe-grau { background: var(--farbe-grau-tint); color: var(--farbe-grau); }
   .tag-plus {
     position: absolute; top: 4px; right: 4px; width: 18px; height: 18px; border-radius: 5px; border: none; background: none;
-    color: var(--muted); cursor: pointer; font-size: 0.8rem; opacity: 0; transition: opacity .15s;
+    color: var(--muted); cursor: pointer; font-size: 0.8rem; opacity: 0; transition: opacity .15s; background: var(--surface);
   }
   .kalender-tag:hover .tag-plus { opacity: 1; }
   .tag-plus:hover { background: var(--accent-tint); color: var(--accent); }
   .kalender-hinweis { margin-top: 14px; font-size: 0.82rem; color: var(--muted); }
+  .farbe-picks { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .farbe-pick {
+    width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; cursor: pointer;
+    background: var(--farbe-bg, var(--border)); position: relative;
+  }
+  .farbe-pick.aktiv { border-color: var(--ink); }
+  .farbe-pick.aktiv::after { content: "✓"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.8rem; text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
+  .farbe-pick.farbe-lila { background: var(--farbe-lila); }
+  .farbe-pick.farbe-pink { background: var(--farbe-pink); }
+  .farbe-pick.farbe-tuerkis { background: var(--farbe-tuerkis); }
+  .farbe-pick.farbe-amber { background: var(--farbe-amber); }
+  .farbe-pick.farbe-rot { background: var(--farbe-rot); }
+  .farbe-pick.farbe-grau { background: var(--farbe-grau); }
+  .tagwahl-aktionen { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+  .tagwahl-aktionen .btn { width: 100%; justify-content: center; }
 
   .jahr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
   .mini-monat {
@@ -288,15 +346,19 @@
   .mini-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; font-size: 0.64rem; }
   .mini-wd { text-align: center; color: var(--muted); font-weight: 600; padding-bottom: 3px; }
   .mini-tag { text-align: center; padding: 2px 0; border-radius: 3px; position: relative; color: var(--ink); }
-  .mini-tag.ferien { background: var(--surface-2); }
+  .mini-tag.ferien { background: var(--ferien-bg); }
   .mini-tag.wochenende { background: var(--wochenende-bg); color: var(--wochenende-ink); }
-  .mini-tag.wochenende.ferien { background: color-mix(in oklch, var(--wochenende-bg), black 15%); }
+  .mini-tag.wochenende.ferien { background: var(--ferien-weekend-bg); }
+  .mini-tag.termin-geplant { background: var(--termin-geplant-tint); }
+  .mini-tag.termin-geschrieben { background: var(--termin-geschrieben-tint); }
   .mini-tag.heute { outline: 1.5px solid var(--accent); outline-offset: -1px; font-weight: 700; }
   .mini-tag.hat-termin::after {
     content: ""; position: absolute; bottom: 1px; left: 50%; transform: translateX(-50%);
     width: 3px; height: 3px; border-radius: 50%; background: var(--accent);
   }
   .mini-tag.wochenende.hat-termin::after { background: var(--wochenende-ink); }
+  .mini-tag.termin-geplant::after { background: var(--termin-geplant); }
+  .mini-tag.termin-geschrieben::after { background: var(--termin-geschrieben); }
 
   .stundenplan-vorschau { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--surface); max-width: 720px; }
   .stundenplan-vorschau img { width: 100%; display: block; }
@@ -377,6 +439,15 @@
     { label: "2", wert: 2 }
   ];
 
+  var FARBEN = [
+    { key: "lila", label: "Lila" },
+    { key: "pink", label: "Pink" },
+    { key: "tuerkis", label: "Türkis" },
+    { key: "amber", label: "Amber" },
+    { key: "rot", label: "Rot" },
+    { key: "grau", label: "Grau" }
+  ];
+
   var STANDARD_LNW_TYPEN = [
     { name: "Großer LNW", gewicht: 2 },
     { name: "Kleiner LNW", gewicht: 1 },
@@ -428,6 +499,10 @@
   }
 
   var zustand = ladeZustand();
+  if (!zustand.termine) zustand.termine = [];
+  zustand.klassen.forEach(function (k) {
+    k.schueler.forEach(function (s) { if (!s.notizen) s.notizen = []; });
+  });
   var heute = new Date();
   var ui = { klasseId: null, fachId: null, ansicht: "klasse", kalenderJahr: heute.getFullYear(), kalenderMonat: heute.getMonth(), kalenderModus: "monat" };
 
@@ -503,6 +578,25 @@
       });
     });
     return liste;
+  }
+
+  function alleElterngespraecheMitKontext() {
+    var liste = [];
+    zustand.klassen.forEach(function (k) {
+      k.schueler.forEach(function (s) {
+        (s.notizen || []).forEach(function (n) {
+          if (n.typ !== "elterngespraech" || !n.datum) return;
+          liste.push({ klasse: k, schueler: s, notiz: n });
+        });
+      });
+    });
+    return liste;
+  }
+
+  function findeSchueler(klasse, id) {
+    if (!klasse) return null;
+    for (var i = 0; i < klasse.schueler.length; i++) { if (klasse.schueler[i].id === id) return klasse.schueler[i]; }
+    return null;
   }
 
   var app = document.getElementById("app");
@@ -591,6 +685,7 @@
   function renderJahresuebersicht() {
     var startJahr = schuljahrStart(ui.kalenderJahr, ui.kalenderMonat);
     var alleLnws = alleLnwsMitKontext();
+    var alleEG = alleElterngespraecheMitKontext();
     var monate = [];
     for (var i = 0; i < 12; i++) {
       monate.push({ jahr: startJahr + Math.floor((8 + i) / 12), monat: (8 + i) % 12 });
@@ -604,13 +699,13 @@
       '</div>';
 
     html += '<div class="jahr-grid">';
-    monate.forEach(function (mo) { html += renderMiniMonat(mo.jahr, mo.monat, alleLnws); });
+    monate.forEach(function (mo) { html += renderMiniMonat(mo.jahr, mo.monat, alleLnws, alleEG); });
     html += '</div>';
     html += '<p class="kalender-hinweis druck-ausblenden">Auf einen Monat klicken, um ihn im Detail zu öffnen.</p>';
     return html;
   }
 
-  function renderMiniMonat(jahr, monat, alleLnws) {
+  function renderMiniMonat(jahr, monat, alleLnws, alleEG) {
     var ersterTag = new Date(jahr, monat, 1);
     var anzahlTage = new Date(jahr, monat + 1, 0).getDate();
     var startOffset = (ersterTag.getDay() + 6) % 7;
@@ -623,9 +718,13 @@
       var ferien = ferienAmTag(iso);
       var wIdx = (startOffset + tag - 1) % 7;
       var we = wIdx === 5 || wIdx === 6;
-      var hatTermin = alleLnws.some(function (e) { return e.lnw.datum === iso; });
+      var lnwHier = alleLnws.filter(function (e) { return e.lnw.datum === iso; });
+      var hatTermin = lnwHier.length > 0 ||
+        (alleEG && alleEG.some(function (e) { return e.notiz.datum === iso; })) ||
+        zustand.termine.some(function (t) { return t.datum === iso; });
+      var terminStatus = lnwHier.length > 0 ? (iso < heuteIso() ? ' termin-geschrieben' : ' termin-geplant') : "";
       var istHeute = iso === heuteIso();
-      html += '<span class="mini-tag' + (ferien ? ' ferien' : '') + (we ? ' wochenende' : '') + (hatTermin ? ' hat-termin' : '') + (istHeute ? ' heute' : '') + '">' + tag + '</span>';
+      html += '<span class="mini-tag' + (ferien ? ' ferien' : '') + (we ? ' wochenende' : '') + (hatTermin ? ' hat-termin' : '') + terminStatus + (istHeute ? ' heute' : '') + '">' + tag + '</span>';
     }
     html += '</div></button>';
     return html;
@@ -639,6 +738,7 @@
     var anzahlTage = new Date(jahr, monat + 1, 0).getDate();
     var startOffset = (ersterTag.getDay() + 6) % 7; // Montag = 0
     var alleLnws = alleLnwsMitKontext();
+    var alleEG = alleElterngespraecheMitKontext();
 
     var html = '<div class="kalender-kopf druck-ausblenden">' +
       '<button class="btn btn-ghost btn-sm" id="monat-zurueck">←</button>' +
@@ -669,14 +769,24 @@
         var ferien = ferienAmTag(iso);
         var istHeute = iso === heuteIso();
         var termine = alleLnws.filter(function (e) { return e.lnw.datum === iso; });
-        html += '<div class="kalender-tag' + (ferien ? ' ferien' : '') + (istHeute ? ' heute' : '') + (istWochenende ? ' wochenende' : '') + '" data-tag="' + iso + '">' +
+        var egTermine = alleEG.filter(function (e) { return e.notiz.datum === iso; });
+        var sonstTermine = zustand.termine.filter(function (t) { return t.datum === iso; });
+        var terminStatus = termine.length > 0 ? (iso < heuteIso() ? ' termin-geschrieben' : ' termin-geplant') : '';
+        html += '<div class="kalender-tag' + (ferien ? ' ferien' : '') + (istHeute ? ' heute' : '') + (istWochenende ? ' wochenende' : '') + terminStatus + '" data-tag="' + iso + '">' +
           '<span class="tagnummer">' + datum.getDate() + '</span>' +
           (ferien ? '<span class="ferien-label">' + escapeHtml(ferien.name) + '</span>' : '') +
           termine.map(function (e) {
-            return '<button class="termin-chip" data-termin-klasse="' + e.klasse.id + '" data-termin-fach="' + e.fach.id + '">' +
+            return '<button class="termin-chip' + (e.lnw.datum < heuteIso() ? ' geschrieben' : ' geplant') + '" data-termin-klasse="' + e.klasse.id + '" data-termin-fach="' + e.fach.id + '">' +
               escapeHtml(e.klasse.name) + ' · ' + escapeHtml(e.fach.name) + '<br>' + escapeHtml(e.typName) + '</button>';
           }).join("") +
-          '<button class="tag-plus druck-ausblenden" data-tag-plus="' + iso + '" title="Leistungsnachweis planen">+</button>' +
+          egTermine.map(function (e) {
+            return '<button class="termin-chip farbe-lila" data-eg-klasse="' + e.klasse.id + '" data-eg-schueler="' + e.schueler.id + '" data-eg-id="' + e.notiz.id + '">' +
+              '👪 ' + escapeHtml(e.schueler.name) + '<br>' + escapeHtml(e.notiz.thema || "Elterngespräch") + '</button>';
+          }).join("") +
+          sonstTermine.map(function (t) {
+            return '<button class="termin-chip farbe-' + escapeHtml(t.farbe || "grau") + '" data-sonst-termin="' + t.id + '">' + escapeHtml(t.titel) + '</button>';
+          }).join("") +
+          '<button class="tag-plus druck-ausblenden" data-tag-plus="' + iso + '" title="Eintrag hinzufügen">+</button>' +
           '</div>';
       }
 
@@ -687,7 +797,7 @@
       }
     }
     html += '</div></div>';
-    html += '<p class="kalender-hinweis druck-ausblenden">Bayerische Schulferien grau hinterlegt, Samstag/Sonntag dunkelgrau. Am Ende jeder Woche steht, wie viele Tage noch bis zu den nächsten Ferien sind. Auf ein Datum klicken, um einen Leistungsnachweis zu planen, oder auf einen vorhandenen Termin, um direkt zu den Noten zu springen.</p>';
+    html += '<p class="kalender-hinweis druck-ausblenden">Bayerische Schulferien orange hinterlegt, Samstag/Sonntag dunkelgrau. Geplante Leistungsnachweise blau, bereits geschriebene grün. Elterngespräche lila, sonstige Termine in frei wählbarer Farbe. Am Ende jeder Woche steht, wie viele Tage noch bis zu den nächsten Ferien sind. Auf das „+" an einem Tag klicken, um einen Leistungsnachweis, ein Elterngespräch oder einen sonstigen Termin einzutragen.</p>';
     return html;
   }
 
@@ -720,6 +830,7 @@
     var html = '<div class="klasse-kopf"><h1>' + escapeHtml(klasse.name) + '</h1>' +
       '<div class="klasse-kopf-aktionen druck-ausblenden">' +
       '<button class="btn btn-ghost btn-sm" id="schueler-verwalten-btn">Schüler verwalten</button>' +
+      '<button class="btn btn-ghost btn-sm" id="beobachtungen-btn">Beobachtungen</button>' +
       '<button class="btn btn-ghost btn-sm" id="klasse-umbenennen-btn">Umbenennen</button>' +
       '<button class="btn btn-danger-ghost btn-sm" id="klasse-loeschen-btn">Löschen</button>' +
       '</div></div>' +
@@ -1009,7 +1120,7 @@
     bindeZeilen();
 
     dlg.querySelector("#d-schueler-hinzufuegen").addEventListener("click", function () {
-      klasse.schueler.push({ id: neueId(), name: "" });
+      klasse.schueler.push({ id: neueId(), name: "", notizen: [] });
       speichereZustand();
       dlg.querySelector("#d-schueler-liste").innerHTML = zeilenHtml();
       bindeZeilen();
@@ -1281,11 +1392,229 @@
           return '<div class="ueberblick-fach"><h3>' + escapeHtml(f.name) + '<span class="schnitt-badge-dialog">Ø ' + formatSchnitt(schnitt) + '</span></h3>' + zeilen + '</div>';
         }).join("");
 
+    var notizen = (schueler.notizen || []).slice().sort(function (a, b) { return (b.datum || "") < (a.datum || "") ? -1 : 1; });
+    var notizenHtml = notizen.length === 0
+      ? '<p style="color:var(--muted);font-size:0.86rem;">Noch keine Einträge.</p>'
+      : notizen.map(function (n) {
+          if (n.typ === "elterngespraech") {
+            return '<div class="typen-zeile" style="cursor:pointer;" data-notiz-bearbeiten="' + n.id + '"><div class="name">👪 ' + escapeHtml(n.thema || "Elterngespräch") +
+              '<br><span style="color:var(--muted);font-weight:400;font-size:0.8rem;">' + (n.datum ? formatDatumLang(n.datum) : "") +
+              (n.erziehungsberechtigter ? " · " + escapeHtml(n.erziehungsberechtigter) : "") + '</span></div></div>';
+          }
+          var kurztext = (n.text || "").length > 70 ? n.text.slice(0, 70) + "…" : (n.text || "");
+          return '<div class="typen-zeile" style="cursor:pointer;" data-notiz-bearbeiten="' + n.id + '"><div class="name">📝 ' + escapeHtml(kurztext) +
+            '<br><span style="color:var(--muted);font-weight:400;font-size:0.8rem;">' + (n.datum ? formatDatumLang(n.datum) : "") + '</span></div></div>';
+        }).join("");
+
     var dlg = oeffneDialog('<h2>' + escapeHtml(schueler.name) + '</h2>' +
       '<div class="ueberblick-inhalt">' + inhalt + '</div>' +
+      '<h3 style="margin:20px 0 10px;font-size:0.95rem;">Notizen</h3>' +
+      '<div class="tagwahl-aktionen" style="flex-direction:row;margin-bottom:12px;">' +
+        '<button class="btn btn-ghost btn-sm" id="d-neue-beobachtung">+ Beobachtung</button>' +
+        '<button class="btn btn-ghost btn-sm" id="d-neues-eg">+ Elterngespräch</button>' +
+      '</div>' +
+      '<div class="typen-liste">' + notizenHtml + '</div>' +
       '<div class="dialog-aktionen"><button class="btn btn-ghost" id="d-schliessen">Schließen</button></div>'
     );
     dlg.querySelector("#d-schliessen").addEventListener("click", function () { dlg.close(); });
+    dlg.querySelector("#d-neue-beobachtung").addEventListener("click", function () { dlg.close(); dialogBeobachtungForm(klasse, schueler); });
+    dlg.querySelector("#d-neues-eg").addEventListener("click", function () { dlg.close(); dialogElterngespraechForm(klasse, schueler); });
+    dlg.querySelectorAll("[data-notiz-bearbeiten]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var id = el.getAttribute("data-notiz-bearbeiten");
+        var n = (schueler.notizen || []).filter(function (x) { return x.id === id; })[0];
+        if (!n) return;
+        dlg.close();
+        if (n.typ === "elterngespraech") dialogElterngespraechForm(klasse, schueler, n);
+        else dialogBeobachtungForm(klasse, schueler, n);
+      });
+    });
+  }
+
+  function dialogBeobachtungForm(klasse, schueler, bestehende) {
+    var dlg = oeffneDialog(
+      '<h2>' + (bestehende ? "Beobachtung bearbeiten" : "Neue Beobachtung") + '</h2>' +
+      '<p style="color:var(--muted);font-size:0.86rem;margin-bottom:14px;">' + escapeHtml(klasse.name) + ' · ' + escapeHtml(schueler.name) + '</p>' +
+      '<div class="feld"><label for="d-datum">Datum</label><input type="date" id="d-datum" value="' + (bestehende ? bestehende.datum : heuteIso()) + '"></div>' +
+      '<div class="feld"><label for="d-text">Beobachtung</label><textarea id="d-text" placeholder="Was ist aufgefallen?">' + escapeHtml(bestehende ? bestehende.text || "" : "") + '</textarea></div>' +
+      '<div class="dialog-aktionen">' +
+        (bestehende ? '<button class="btn btn-danger-ghost" id="d-loeschen">Löschen</button>' : '') +
+        '<button class="btn btn-ghost" id="d-abbrechen">Abbrechen</button><button class="btn btn-primary" id="d-speichern">Speichern</button></div>'
+    );
+    dlg.querySelector("#d-abbrechen").addEventListener("click", function () { dlg.close(); });
+    var loeschenBtn = dlg.querySelector("#d-loeschen");
+    if (loeschenBtn) loeschenBtn.addEventListener("click", function () {
+      if (!confirm("Diese Beobachtung löschen?")) return;
+      schueler.notizen = (schueler.notizen || []).filter(function (n) { return n.id !== bestehende.id; });
+      speichereZustand();
+      dlg.close(); render();
+    });
+    dlg.querySelector("#d-speichern").addEventListener("click", function () {
+      var text = dlg.querySelector("#d-text").value.trim();
+      if (!text) { alert("Bitte einen Text eingeben."); return; }
+      var datum = dlg.querySelector("#d-datum").value;
+      if (bestehende) {
+        bestehende.datum = datum; bestehende.text = text;
+      } else {
+        if (!schueler.notizen) schueler.notizen = [];
+        schueler.notizen.push({ id: neueId(), typ: "beobachtung", datum: datum, text: text });
+      }
+      speichereZustand();
+      dlg.close(); render();
+    });
+  }
+
+  function dialogElterngespraechForm(klasse, schueler, bestehende, datumVorgabe) {
+    var dlg = oeffneDialog(
+      '<h2>' + (bestehende ? "Elterngespräch bearbeiten" : "Neues Elterngespräch") + '</h2>' +
+      '<p style="color:var(--muted);font-size:0.86rem;margin-bottom:14px;">' + escapeHtml(klasse.name) + ' · ' + escapeHtml(schueler.name) + '</p>' +
+      '<div class="feld"><label for="d-datum">Datum</label><input type="date" id="d-datum" value="' + (bestehende ? bestehende.datum : (datumVorgabe || heuteIso())) + '"></div>' +
+      '<div class="feld"><label for="d-eb">Name des Erziehungsberechtigten</label><input type="text" id="d-eb" value="' + escapeHtml(bestehende ? bestehende.erziehungsberechtigter || "" : "") + '"></div>' +
+      '<div class="feld"><label for="d-thema">Thema</label><input type="text" id="d-thema" value="' + escapeHtml(bestehende ? bestehende.thema || "" : "") + '"></div>' +
+      '<div class="feld"><label for="d-verlauf">Gesprächsverlauf</label><textarea id="d-verlauf">' + escapeHtml(bestehende ? bestehende.verlauf || "" : "") + '</textarea></div>' +
+      '<div class="feld"><label for="d-ziel">Zielsetzung</label><textarea id="d-ziel">' + escapeHtml(bestehende ? bestehende.ziel || "" : "") + '</textarea></div>' +
+      '<div class="dialog-aktionen">' +
+        (bestehende ? '<button class="btn btn-danger-ghost" id="d-loeschen">Löschen</button>' : '') +
+        '<button class="btn btn-ghost" id="d-abbrechen">Abbrechen</button><button class="btn btn-primary" id="d-speichern">Speichern</button></div>'
+    );
+    dlg.querySelector("#d-abbrechen").addEventListener("click", function () { dlg.close(); });
+    var loeschenBtn = dlg.querySelector("#d-loeschen");
+    if (loeschenBtn) loeschenBtn.addEventListener("click", function () {
+      if (!confirm("Dieses Elterngespräch löschen?")) return;
+      schueler.notizen = (schueler.notizen || []).filter(function (n) { return n.id !== bestehende.id; });
+      speichereZustand();
+      dlg.close(); render();
+    });
+    dlg.querySelector("#d-speichern").addEventListener("click", function () {
+      var thema = dlg.querySelector("#d-thema").value.trim();
+      var datum = dlg.querySelector("#d-datum").value;
+      var eb = dlg.querySelector("#d-eb").value.trim();
+      var verlauf = dlg.querySelector("#d-verlauf").value.trim();
+      var ziel = dlg.querySelector("#d-ziel").value.trim();
+      if (bestehende) {
+        bestehende.datum = datum; bestehende.erziehungsberechtigter = eb; bestehende.thema = thema;
+        bestehende.verlauf = verlauf; bestehende.ziel = ziel;
+      } else {
+        if (!schueler.notizen) schueler.notizen = [];
+        schueler.notizen.push({ id: neueId(), typ: "elterngespraech", datum: datum, erziehungsberechtigter: eb, thema: thema, verlauf: verlauf, ziel: ziel });
+      }
+      speichereZustand();
+      dlg.close(); render();
+    });
+  }
+
+  function dialogElterngespraechWaehlen(datumIso) {
+    if (zustand.klassen.length === 0) { alert("Lege zuerst eine Klasse an."); return; }
+    var dlg = oeffneDialog(
+      '<h2>Elterngespräch – Schüler wählen</h2>' +
+      '<p style="color:var(--muted);font-size:0.86rem;margin-bottom:14px;">am ' + formatDatumLang(datumIso) + '</p>' +
+      '<div class="feld"><label for="d-klasse">Klasse</label><select id="d-klasse"></select></div>' +
+      '<div class="feld"><label for="d-schueler">Schüler</label><select id="d-schueler"></select></div>' +
+      '<div class="dialog-aktionen"><button class="btn btn-ghost" id="d-abbrechen">Abbrechen</button><button class="btn btn-primary" id="d-weiter">Weiter</button></div>'
+    );
+    function befuelleSchueler() {
+      var klasse = findeKlasse(dlg.querySelector("#d-klasse").value);
+      dlg.querySelector("#d-schueler").innerHTML = klasse.schueler.length === 0
+        ? '<option value="">– keine Schüler –</option>'
+        : klasse.schueler.map(function (s) { return '<option value="' + s.id + '">' + escapeHtml(s.name || "(ohne Namen)") + '</option>'; }).join("");
+    }
+    dlg.querySelector("#d-klasse").innerHTML = zustand.klassen.map(function (k) { return '<option value="' + k.id + '">' + escapeHtml(k.name) + '</option>'; }).join("");
+    dlg.querySelector("#d-klasse").addEventListener("change", befuelleSchueler);
+    befuelleSchueler();
+    dlg.querySelector("#d-abbrechen").addEventListener("click", function () { dlg.close(); });
+    dlg.querySelector("#d-weiter").addEventListener("click", function () {
+      var klasse = findeKlasse(dlg.querySelector("#d-klasse").value);
+      var schueler = findeSchueler(klasse, dlg.querySelector("#d-schueler").value);
+      if (!schueler) { alert("Diese Klasse hat noch keine Schüler."); return; }
+      dlg.close();
+      dialogElterngespraechForm(klasse, schueler, null, datumIso);
+    });
+  }
+
+  function dialogTerminErstellen(datumIso, bestehender) {
+    var dlg = oeffneDialog(
+      '<h2>' + (bestehender ? "Termin bearbeiten" : "Termin eintragen") + '</h2>' +
+      '<div class="feld"><label for="d-titel">Titel</label><input type="text" id="d-titel" placeholder="z. B. Fortbildung" value="' + escapeHtml(bestehender ? bestehender.titel : "") + '"></div>' +
+      '<div class="feld"><label for="d-datum">Datum</label><input type="date" id="d-datum" value="' + (bestehender ? bestehender.datum : datumIso) + '"></div>' +
+      '<div class="feld"><label>Farbe</label><div class="farbe-picks" id="d-farbe-picks"></div></div>' +
+      '<div class="dialog-aktionen">' +
+        (bestehender ? '<button class="btn btn-danger-ghost" id="d-loeschen">Löschen</button>' : '') +
+        '<button class="btn btn-ghost" id="d-abbrechen">Abbrechen</button><button class="btn btn-primary" id="d-speichern">Speichern</button></div>'
+    );
+
+    var gewaehlteFarbe = (bestehender && bestehender.farbe) || FARBEN[0].key;
+    function renderFarbePicks() {
+      dlg.querySelector("#d-farbe-picks").innerHTML = FARBEN.map(function (f) {
+        return '<button type="button" class="farbe-pick farbe-' + f.key + (f.key === gewaehlteFarbe ? ' aktiv' : '') + '" data-farbe="' + f.key + '" title="' + f.label + '"></button>';
+      }).join("");
+      dlg.querySelectorAll("[data-farbe]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          gewaehlteFarbe = btn.getAttribute("data-farbe");
+          renderFarbePicks();
+        });
+      });
+    }
+    renderFarbePicks();
+
+    dlg.querySelector("#d-abbrechen").addEventListener("click", function () { dlg.close(); });
+    var loeschenBtn = dlg.querySelector("#d-loeschen");
+    if (loeschenBtn) loeschenBtn.addEventListener("click", function () {
+      if (!confirm("Diesen Termin löschen?")) return;
+      zustand.termine = zustand.termine.filter(function (t) { return t.id !== bestehender.id; });
+      speichereZustand();
+      dlg.close(); render();
+    });
+    dlg.querySelector("#d-speichern").addEventListener("click", function () {
+      var titel = dlg.querySelector("#d-titel").value.trim();
+      if (!titel) { alert("Bitte einen Titel eingeben."); return; }
+      var datum = dlg.querySelector("#d-datum").value;
+      if (bestehender) {
+        bestehender.titel = titel; bestehender.datum = datum; bestehender.farbe = gewaehlteFarbe;
+      } else {
+        zustand.termine.push({ id: neueId(), titel: titel, datum: datum, farbe: gewaehlteFarbe });
+      }
+      speichereZustand();
+      dlg.close(); render();
+    });
+  }
+
+  function dialogTagOptionen(iso) {
+    var dlg = oeffneDialog(
+      '<h2>Eintrag am ' + formatDatumLang(iso) + '</h2>' +
+      '<div class="tagwahl-aktionen">' +
+        '<button class="btn btn-primary" id="d-opt-lnw">Leistungsnachweis planen</button>' +
+        '<button class="btn btn-ghost" id="d-opt-eg">Elterngespräch eintragen</button>' +
+        '<button class="btn btn-ghost" id="d-opt-termin">Sonstigen Termin eintragen</button>' +
+      '</div>' +
+      '<div class="dialog-aktionen"><button class="btn btn-ghost" id="d-abbrechen">Abbrechen</button></div>'
+    );
+    dlg.querySelector("#d-abbrechen").addEventListener("click", function () { dlg.close(); });
+    dlg.querySelector("#d-opt-lnw").addEventListener("click", function () { dlg.close(); dialogLnwPlanen(iso); });
+    dlg.querySelector("#d-opt-eg").addEventListener("click", function () { dlg.close(); dialogElterngespraechWaehlen(iso); });
+    dlg.querySelector("#d-opt-termin").addEventListener("click", function () { dlg.close(); dialogTerminErstellen(iso); });
+  }
+
+  function dialogKlasseBeobachtungen(klasse) {
+    if (klasse.schueler.length === 0) { alert("Diese Klasse hat noch keine Schüler."); return; }
+    var dlg = oeffneDialog(
+      '<h2>Beobachtungen – ' + escapeHtml(klasse.name) + '</h2>' +
+      '<p style="color:var(--muted);font-size:0.86rem;margin-bottom:14px;">Schüler wählen, um Beobachtungen und Elterngespräche einzusehen oder einzutragen.</p>' +
+      '<div class="typen-liste">' + klasse.schueler.map(function (s) {
+        var anzahl = (s.notizen || []).length;
+        return '<div class="typen-zeile" style="cursor:pointer;" data-schueler-wahl="' + s.id + '"><div class="name">' + escapeHtml(s.name || "(ohne Namen)") + '</div>' +
+          '<span class="gewicht">' + anzahl + (anzahl === 1 ? ' Eintrag' : ' Einträge') + '</span></div>';
+      }).join("") + '</div>' +
+      '<div class="dialog-aktionen"><button class="btn btn-ghost" id="d-schliessen">Schließen</button></div>'
+    );
+    dlg.querySelector("#d-schliessen").addEventListener("click", function () { dlg.close(); });
+    dlg.querySelectorAll("[data-schueler-wahl]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var s = findeSchueler(klasse, el.getAttribute("data-schueler-wahl"));
+        if (!s) return;
+        dlg.close();
+        dialogSchuelerUeberblick(klasse, s);
+      });
+    });
   }
 
   function dialogLnwPlanen(datumIso) {
@@ -1416,7 +1745,7 @@
         });
       });
       document.querySelectorAll("[data-tag-plus]").forEach(function (btn) {
-        btn.addEventListener("click", function () { dialogLnwPlanen(btn.getAttribute("data-tag-plus")); });
+        btn.addEventListener("click", function () { dialogTagOptionen(btn.getAttribute("data-tag-plus")); });
       });
       document.querySelectorAll("[data-termin-klasse]").forEach(function (btn) {
         btn.addEventListener("click", function () {
@@ -1424,6 +1753,21 @@
           ui.fachId = btn.getAttribute("data-termin-fach");
           ui.ansicht = "klasse";
           render();
+        });
+      });
+      document.querySelectorAll("[data-eg-id]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var klasse = findeKlasse(btn.getAttribute("data-eg-klasse"));
+          var schueler = findeSchueler(klasse, btn.getAttribute("data-eg-schueler"));
+          if (!klasse || !schueler) return;
+          var notiz = (schueler.notizen || []).filter(function (n) { return n.id === btn.getAttribute("data-eg-id"); })[0];
+          if (notiz) dialogElterngespraechForm(klasse, schueler, notiz);
+        });
+      });
+      document.querySelectorAll("[data-sonst-termin]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var termin = zustand.termine.filter(function (t) { return t.id === btn.getAttribute("data-sonst-termin"); })[0];
+          if (termin) dialogTerminErstellen(termin.datum, termin);
         });
       });
     }
@@ -1469,6 +1813,8 @@
 
     var schuelerBtn = document.getElementById("schueler-verwalten-btn");
     if (schuelerBtn) schuelerBtn.addEventListener("click", function () { dialogSchuelerVerwalten(klasse); });
+    var beobachtungenBtn = document.getElementById("beobachtungen-btn");
+    if (beobachtungenBtn) beobachtungenBtn.addEventListener("click", function () { dialogKlasseBeobachtungen(klasse); });
     var leeresFachSchuelerBtn = document.getElementById("leeres-fach-schueler-btn");
     if (leeresFachSchuelerBtn) leeresFachSchuelerBtn.addEventListener("click", function () { dialogSchuelerVerwalten(klasse); });
     var umbenennenBtn = document.getElementById("klasse-umbenennen-btn");
