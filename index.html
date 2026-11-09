@@ -187,8 +187,8 @@
   .lnw-head .typ { font-weight: 700; font-size: 0.88rem; }
   .lnw-head .thema { color: var(--muted); font-weight: 500; font-size: 0.78rem; max-width: 150px; white-space: normal; }
   .lnw-head .zusatz { color: var(--muted); font-weight: 400; font-size: 0.74rem; white-space: normal; }
-  .lnw-head-aktionen { display: flex; gap: 2px; margin-top: 3px; padding-top: 5px; border-top: 1px solid var(--border); width: 100%; }
-  .lnw-head-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.72rem; padding: 2px 6px; border-radius: 5px; }
+  .lnw-head-aktionen { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 3px; padding-top: 5px; border-top: 1px solid var(--border); width: 100%; }
+  .lnw-head-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.72rem; padding: 2px 5px; border-radius: 5px; white-space: nowrap; }
   .lnw-head-btn:hover { color: var(--accent); background: var(--accent-tint); }
   .lnw-head-btn[data-lnw-loeschen]:hover { color: var(--danger); background: var(--danger-tint); }
 
@@ -782,6 +782,7 @@
         (lnw.titel ? '<span class="thema">„' + escapeHtml(lnw.titel) + '“</span>' : '') +
         '<span class="zusatz">' + (lnw.datum ? formatDatumLang(lnw.datum) : 'kein Datum') + '</span>' +
         '<div class="lnw-head-aktionen druck-ausblenden">' +
+        '<button class="lnw-head-btn" data-lnw-bearbeiten="' + lnw.id + '">Bearbeiten</button>' +
         '<button class="lnw-head-btn" data-lnw-drucken="' + lnw.id + '">Drucken</button>' +
         '<button class="lnw-head-btn" data-lnw-loeschen="' + lnw.id + '">Löschen</button>' +
         '</div></div></th>';
@@ -1219,6 +1220,51 @@
     });
   }
 
+  function dialogLnwBearbeiten(fach, lnw) {
+    var dlg = oeffneDialog(
+      '<h2>Leistungsnachweis bearbeiten</h2>' +
+      '<div class="feld"><label for="d-typ">Typ</label><select id="d-typ">' +
+        fach.lnwTypen.map(function (t) { return '<option value="' + t.id + '"' + (t.id === lnw.typId ? " selected" : "") + '>' + escapeHtml(t.name) + '</option>'; }).join("") +
+      '</select></div>' +
+      '<div class="feld"><label for="d-titel">Thema (optional)</label><input type="text" id="d-titel" placeholder="z. B. Bruchrechnen" value="' + escapeHtml(lnw.titel || "") + '"></div>' +
+      '<div class="feld"><label for="d-datum">Geschrieben am</label><input type="date" id="d-datum" value="' + (lnw.datum || "") + '"></div>' +
+      '<div class="feld"><label>Gewichtung</label><div class="gewicht-picks" id="d-gewicht-picks"></div>' +
+        '<input type="number" id="d-gewicht-custom" step="0.01"></div>' +
+      '<div class="dialog-aktionen"><button class="btn btn-ghost" id="d-abbrechen">Abbrechen</button><button class="btn btn-primary" id="d-speichern">Speichern</button></div>'
+    );
+
+    var gewaehltesGewicht = lnw.gewicht;
+    function renderGewichtPicks() {
+      dlg.querySelector("#d-gewicht-picks").innerHTML = GEWICHT_PRESETS.map(function (p) {
+        return '<button type="button" class="gewicht-pick' + (Math.abs(p.wert - gewaehltesGewicht) < 0.001 ? ' aktiv' : '') + '" data-gewicht="' + p.wert + '">' + p.label + '</button>';
+      }).join("");
+      dlg.querySelectorAll("[data-gewicht]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          gewaehltesGewicht = parseFloat(btn.getAttribute("data-gewicht"));
+          dlg.querySelector("#d-gewicht-custom").value = "";
+          renderGewichtPicks();
+        });
+      });
+      dlg.querySelector("#d-gewicht-custom").value = GEWICHT_PRESETS.some(function (p) { return Math.abs(p.wert - gewaehltesGewicht) < 0.001; }) ? "" : gewaehltesGewicht;
+    }
+    renderGewichtPicks();
+
+    dlg.querySelector("#d-gewicht-custom").addEventListener("input", function (e) {
+      if (e.target.value) { gewaehltesGewicht = parseFloat(e.target.value) || 1; renderGewichtPicks(); }
+    });
+
+    dlg.querySelector("#d-abbrechen").addEventListener("click", function () { dlg.close(); });
+    dlg.querySelector("#d-speichern").addEventListener("click", function () {
+      lnw.typId = dlg.querySelector("#d-typ").value;
+      lnw.titel = dlg.querySelector("#d-titel").value.trim();
+      lnw.datum = dlg.querySelector("#d-datum").value;
+      lnw.gewicht = gewaehltesGewicht;
+      fach.lnws.sort(function (a, b) { return (a.datum || "9999") < (b.datum || "9999") ? -1 : 1; });
+      speichereZustand();
+      dlg.close(); render();
+    });
+  }
+
   function dialogSchuelerUeberblick(klasse, schueler) {
     var inhalt = klasse.faecher.length === 0
       ? '<p style="color:var(--muted);">Diese Klasse hat noch kein Fach.</p>'
@@ -1461,6 +1507,14 @@
       if (fachLoeschenBtn) fachLoeschenBtn.addEventListener("click", function () { dialogFachLoeschen(klasse, fach); });
       var druckenBtn = document.getElementById("drucken-btn");
       if (druckenBtn) druckenBtn.addEventListener("click", function () { window.print(); });
+
+      document.querySelectorAll("[data-lnw-bearbeiten]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var id = btn.getAttribute("data-lnw-bearbeiten");
+          var lnw = fach.lnws.filter(function (l) { return l.id === id; })[0];
+          if (lnw) dialogLnwBearbeiten(fach, lnw);
+        });
+      });
 
       document.querySelectorAll("[data-lnw-drucken]").forEach(function (btn) {
         btn.addEventListener("click", function () {
