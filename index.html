@@ -270,6 +270,20 @@
   .typen-zeile button { background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px 6px; border-radius: 6px; font-size: 0.8rem; }
   .typen-zeile button:hover { color: var(--danger); background: var(--danger-tint); }
 
+  .dienstwoche-karte { margin-bottom: 20px; }
+  .dienstwoche-karte h3 { font-size: 1rem; margin: 0 0 8px; display: flex; align-items: baseline; gap: 10px; }
+  .dienstwoche-datum { font-size: 0.76rem; font-weight: 400; color: var(--muted); }
+  .dienstwoche-aktuell .dienstplan-tabelle { border-color: var(--accent); }
+  table.dienstplan-tabelle { border-collapse: collapse; width: 100%; font-size: 0.86rem; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
+  table.dienstplan-tabelle th, table.dienstplan-tabelle td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+  table.dienstplan-tabelle thead th { font-weight: 600; background: var(--surface-2); }
+  table.dienstplan-tabelle th:first-child, table.dienstplan-tabelle td:first-child { width: 160px; font-weight: 500; }
+  table.dienstplan-tabelle tr.dienstplan-urlaub-zeile td { color: var(--muted); font-style: italic; border-top: 2px solid var(--border); border-bottom: none; }
+  .dienstplan-verlauf-titel { font-size: 1rem; margin: 26px 0 12px; }
+  table.dienst-uebersicht th.schueler-col, table.dienst-uebersicht td.schueler-col { left: 0; }
+  table.dienst-uebersicht td.dienst-zahl { text-align: center; font-variant-numeric: tabular-nums; }
+  table.dienst-uebersicht td.dienst-fehlt { color: var(--danger); font-weight: 700; }
+
   .schueler-liste-edit { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; max-height: 320px; overflow-y: auto; }
   .schueler-zeile-edit { display: flex; gap: 8px; align-items: center; }
   .schueler-zeile-edit input { flex: 1; }
@@ -462,6 +476,17 @@
     { name: "Plakat", gewicht: 1 }
   ];
 
+  var STANDARD_DIENSTE = [
+    { name: "Ordnungsdienst", anzahl: 3 },
+    { name: "Tafeldienst", anzahl: 2 },
+    { name: "Austeildienst", anzahl: 2 },
+    { name: "Kalendardienst", anzahl: 2 },
+    { name: "Pflanzendienst", anzahl: 2 },
+    { name: "Botendienst", anzahl: 1 },
+    { name: "Ersatzdienst", anzahl: 2 },
+    { name: "Fensterdienst", anzahl: 2 }
+  ];
+
   // Offizielle Ferientermine Bayern, Quelle: km.bayern.de/termine/ferien-und-feiertage,
   // Bekanntmachung BayMBl. 2022 Nr. 747 (Schuljahre 2024/25 bis 2029/30). Stand der Erfassung: 11/2026,
   // hier eingetragen bis einschließlich Sommerferien 2027. Weitere Schuljahre bei Bedarf ergänzen.
@@ -502,6 +527,8 @@
   if (!zustand.termine) zustand.termine = [];
   zustand.klassen.forEach(function (k) {
     k.schueler.forEach(function (s) { if (!s.notizen) s.notizen = []; });
+    if (!k.dienste) k.dienste = STANDARD_DIENSTE.map(function (d) { return { id: neueId(), name: d.name, anzahl: d.anzahl }; });
+    if (!k.dienstplanWochen) k.dienstplanWochen = [];
   });
   var heute = new Date();
   var ui = { klasseId: null, fachId: null, ansicht: "klasse", kalenderJahr: heute.getFullYear(), kalenderMonat: heute.getMonth(), kalenderModus: "monat" };
@@ -599,6 +626,109 @@
     return null;
   }
 
+  function summeWerte(obj) {
+    var summe = 0;
+    for (var k in obj) { if (obj.hasOwnProperty(k)) summe += obj[k]; }
+    return summe;
+  }
+
+  function dienstplanStatistik(klasse) {
+    var stats = {};
+    klasse.schueler.forEach(function (s) {
+      stats[s.id] = { proDienst: {}, urlaubCount: 0, letzteDienstId: null, partner: {} };
+      klasse.dienste.forEach(function (d) { stats[s.id].proDienst[d.id] = 0; });
+    });
+    klasse.dienstplanWochen.forEach(function (woche) {
+      var werHatteDieseWoche = {};
+      klasse.dienste.forEach(function (d) {
+        var ids = woche.zuteilung[d.id] || [];
+        ids.forEach(function (sid) {
+          if (!stats[sid]) return;
+          stats[sid].proDienst[d.id] = (stats[sid].proDienst[d.id] || 0) + 1;
+          werHatteDieseWoche[sid] = d.id;
+          ids.forEach(function (andererId) {
+            if (andererId === sid) return;
+            stats[sid].partner[andererId] = (stats[sid].partner[andererId] || 0) + 1;
+          });
+        });
+      });
+      klasse.schueler.forEach(function (s) {
+        stats[s.id].letzteDienstId = werHatteDieseWoche[s.id] || null;
+        if (!werHatteDieseWoche[s.id]) stats[s.id].urlaubCount++;
+      });
+    });
+    return stats;
+  }
+
+  function besteDienstKombination(pool, k, stats) {
+    if (k <= 0) return [];
+    if (pool.length <= k) return pool.slice(0, k);
+    var besteKombi = null, besteKosten = Infinity;
+    function kombiniere(start, aktuelle) {
+      if (aktuelle.length === k) {
+        var kosten = 0;
+        for (var i = 0; i < aktuelle.length; i++) {
+          for (var j = i + 1; j < aktuelle.length; j++) {
+            kosten += stats[aktuelle[i].id].partner[aktuelle[j].id] || 0;
+          }
+        }
+        if (kosten < besteKosten) { besteKosten = kosten; besteKombi = aktuelle.slice(); }
+        return;
+      }
+      for (var idx = start; idx < pool.length; idx++) {
+        aktuelle.push(pool[idx]);
+        kombiniere(idx + 1, aktuelle);
+        aktuelle.pop();
+      }
+    }
+    kombiniere(0, []);
+    return besteKombi;
+  }
+
+  function generiereDienstwoche(klasse) {
+    if (klasse.schueler.length === 0) { alert("Diese Klasse hat noch keine Schüler."); return; }
+    if (klasse.dienste.length === 0) { alert("Lege zuerst mindestens einen Dienst an."); return; }
+    var stats = dienstplanStatistik(klasse);
+    var verfuegbar = klasse.schueler.slice();
+    for (var i = verfuegbar.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tausch = verfuegbar[i]; verfuegbar[i] = verfuegbar[j]; verfuegbar[j] = tausch;
+    }
+
+    var zuteilung = {};
+    var zugewiesenDieseWoche = {};
+
+    klasse.dienste.forEach(function (d) {
+      var kandidaten = verfuegbar.filter(function (s) {
+        return !zugewiesenDieseWoche[s.id] && stats[s.id].letzteDienstId !== d.id;
+      });
+      if (kandidaten.length < d.anzahl) {
+        kandidaten = verfuegbar.filter(function (s) { return !zugewiesenDieseWoche[s.id]; });
+      }
+      kandidaten.sort(function (a, b) {
+        var sa = stats[a.id], sb = stats[b.id];
+        var aNeu = sa.proDienst[d.id] === 0 ? 0 : 1;
+        var bNeu = sb.proDienst[d.id] === 0 ? 0 : 1;
+        if (aNeu !== bNeu) return aNeu - bNeu;
+        if (sa.proDienst[d.id] !== sb.proDienst[d.id]) return sa.proDienst[d.id] - sb.proDienst[d.id];
+        var aGesamt = summeWerte(sa.proDienst), bGesamt = summeWerte(sb.proDienst);
+        if (aGesamt !== bGesamt) return aGesamt - bGesamt;
+        return Math.random() - 0.5;
+      });
+
+      var anzahlZuWaehlen = Math.min(d.anzahl, kandidaten.length);
+      var pool = kandidaten.slice(0, Math.min(kandidaten.length, anzahlZuWaehlen + 4));
+      var ausgewaehlt = besteDienstKombination(pool, anzahlZuWaehlen, stats);
+
+      zuteilung[d.id] = ausgewaehlt.map(function (s) { return s.id; });
+      ausgewaehlt.forEach(function (s) { zugewiesenDieseWoche[s.id] = true; });
+    });
+
+    klasse.dienstplanWochen.push({ id: neueId(), erstelltAm: heuteIso(), zuteilung: zuteilung });
+    speichereZustand();
+    render();
+  }
+
   var app = document.getElementById("app");
 
   function render() {
@@ -608,6 +738,8 @@
       html += renderKalender();
     } else if (ui.ansicht === "stundenplan") {
       html += renderStundenplan();
+    } else if (ui.ansicht === "dienstplan" && klasse) {
+      html += renderDienstplan(klasse);
     } else if (!klasse) {
       html += renderLeerZustand();
     } else {
@@ -826,11 +958,82 @@
     return html;
   }
 
+  function renderDienstwocheTabelle(klasse, woche, wochenNummer, istAktuell) {
+    var zugewiesenIds = {};
+    var zeilen = klasse.dienste.map(function (d) {
+      var ids = woche.zuteilung[d.id] || [];
+      ids.forEach(function (id) { zugewiesenIds[id] = true; });
+      var namen = ids.map(function (id) {
+        var s = findeSchueler(klasse, id);
+        return s ? escapeHtml(s.name || "(ohne Namen)") : "(entfernt)";
+      }).join(", ") || "–";
+      return '<tr><td>' + escapeHtml(d.name) + '</td><td>' + namen + '</td></tr>';
+    }).join("");
+
+    var urlaubNamen = klasse.schueler.filter(function (s) { return !zugewiesenIds[s.id]; })
+      .map(function (s) { return escapeHtml(s.name || "(ohne Namen)"); }).join(", ") || "–";
+
+    return '<div class="dienstwoche-karte' + (istAktuell ? ' dienstwoche-aktuell' : '') + '">' +
+      '<h3>Woche ' + wochenNummer + (woche.erstelltAm ? ' <span class="dienstwoche-datum">erstellt am ' + formatDatumLang(woche.erstelltAm) + '</span>' : '') + '</h3>' +
+      '<table class="dienstplan-tabelle"><thead><tr><th>Dienst</th><th>Wer</th></tr></thead><tbody>' +
+      zeilen +
+      '<tr class="dienstplan-urlaub-zeile"><td>Urlaub</td><td>' + urlaubNamen + '</td></tr>' +
+      '</tbody></table></div>';
+  }
+
+  function renderDienstUebersichtsTabelle(klasse, stats) {
+    var html = '<div class="tabellen-wrap"><table class="notentabelle dienst-uebersicht"><thead><tr><th class="schueler-col">Schüler</th>';
+    klasse.dienste.forEach(function (d) { html += '<th>' + escapeHtml(d.name) + '</th>'; });
+    html += '<th>Urlaub</th></tr></thead><tbody>';
+    klasse.schueler.forEach(function (s) {
+      html += '<tr><td class="schueler-col">' + escapeHtml(s.name || "(ohne Namen)") + '</td>';
+      klasse.dienste.forEach(function (d) {
+        var anzahl = stats[s.id].proDienst[d.id] || 0;
+        html += '<td class="dienst-zahl' + (anzahl === 0 ? ' dienst-fehlt' : '') + '">' + anzahl + '</td>';
+      });
+      html += '<td>' + stats[s.id].urlaubCount + '</td></tr>';
+    });
+    html += '</tbody></table></div>';
+    return html;
+  }
+
+  function renderDienstplan(klasse) {
+    var stats = dienstplanStatistik(klasse);
+    var wochen = klasse.dienstplanWochen;
+
+    var html = '<div class="klasse-kopf"><h1>Dienstplan &ndash; ' + escapeHtml(klasse.name) + '</h1>' +
+      '<div class="klasse-kopf-aktionen druck-ausblenden">' +
+      '<button class="btn btn-ghost btn-sm" id="dienste-verwalten-btn">Dienste verwalten</button>' +
+      '<button class="btn btn-primary btn-sm" id="neue-dienstwoche-btn">Neue Woche würfeln</button>' +
+      (wochen.length > 0 ? '<button class="btn btn-danger-ghost btn-sm" id="letzte-dienstwoche-loeschen-btn">Letzte Woche löschen</button>' : '') +
+      '<button class="btn btn-ghost btn-sm" id="dienstplan-drucken-btn">Drucken</button>' +
+      '</div></div>';
+
+    if (wochen.length === 0) {
+      html += '<p style="color:var(--muted);">Noch kein Dienstplan erstellt. "Neue Woche würfeln" verteilt die Dienste fair &ndash; jedes Kind bekommt im Laufe des Schuljahrs jeden Dienst mindestens einmal, nicht zweimal hintereinander denselben, und Gruppen wechseln sich ab.</p>';
+    } else {
+      html += renderDienstwocheTabelle(klasse, wochen[wochen.length - 1], wochen.length, true);
+    }
+
+    if (wochen.length > 1) {
+      html += '<h2 class="dienstplan-verlauf-titel druck-ausblenden">Frühere Wochen</h2>';
+      for (var i = wochen.length - 2; i >= 0; i--) {
+        html += renderDienstwocheTabelle(klasse, wochen[i], i + 1, false);
+      }
+    }
+
+    html += '<h2 class="dienstplan-verlauf-titel">Übersicht: wer hat was schon gemacht</h2>';
+    html += renderDienstUebersichtsTabelle(klasse, stats);
+
+    return html;
+  }
+
   function renderKlasse(klasse, fach) {
     var html = '<div class="klasse-kopf"><h1>' + escapeHtml(klasse.name) + '</h1>' +
       '<div class="klasse-kopf-aktionen druck-ausblenden">' +
       '<button class="btn btn-ghost btn-sm" id="schueler-verwalten-btn">Schüler verwalten</button>' +
       '<button class="btn btn-ghost btn-sm" id="beobachtungen-btn">Beobachtungen</button>' +
+      '<button class="btn btn-ghost btn-sm" id="dienstplan-btn">Dienstplan</button>' +
       '<button class="btn btn-ghost btn-sm" id="klasse-umbenennen-btn">Umbenennen</button>' +
       '<button class="btn btn-danger-ghost btn-sm" id="klasse-loeschen-btn">Löschen</button>' +
       '</div></div>' +
@@ -1044,7 +1247,9 @@
     dlg.querySelector("#d-speichern").addEventListener("click", function () {
       var name = dlg.querySelector("#d-klassenname").value.trim();
       if (!name) return;
-      var neu = { id: neueId(), name: name, schueler: [], faecher: [] };
+      var neu = { id: neueId(), name: name, schueler: [], faecher: [],
+        dienste: STANDARD_DIENSTE.map(function (d) { return { id: neueId(), name: d.name, anzahl: d.anzahl }; }),
+        dienstplanWochen: [] };
       zustand.klassen.push(neu);
       speichereZustand();
       ui.klasseId = neu.id; ui.fachId = null; ui.ansicht = "klasse";
@@ -1594,6 +1799,51 @@
     dlg.querySelector("#d-opt-termin").addEventListener("click", function () { dlg.close(); dialogTerminErstellen(iso); });
   }
 
+  function dialogDiensteVerwalten(klasse) {
+    function zeilenHtml() {
+      return klasse.dienste.map(function (d) {
+        return '<div class="typen-zeile"><span class="name">' + escapeHtml(d.name) + '</span>' +
+          '<span class="gewicht">' + d.anzahl + ' Kind' + (d.anzahl === 1 ? '' : 'er') + '</span>' +
+          '<button data-dienst-loeschen="' + d.id + '">Entfernen</button></div>';
+      }).join("");
+    }
+    var dlg = oeffneDialog(
+      '<h2>Dienste &ndash; ' + escapeHtml(klasse.name) + '</h2>' +
+      '<div class="typen-liste" id="d-dienste-liste">' + zeilenHtml() + '</div>' +
+      '<div class="feld"><label for="d-dienst-name">Neuer Dienst</label><input type="text" id="d-dienst-name" placeholder="z. B. Pausendienst"></div>' +
+      '<div class="feld"><label for="d-dienst-anzahl">Anzahl Kinder</label><input type="number" id="d-dienst-anzahl" min="1" value="2" style="max-width:100px;"></div>' +
+      '<div class="dialog-aktionen"><button class="btn btn-ghost" id="d-schliessen">Fertig</button><button class="btn btn-primary" id="d-dienst-anlegen">Dienst hinzufügen</button></div>'
+    );
+
+    function bindeLoeschen() {
+      dlg.querySelectorAll("[data-dienst-loeschen]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var id = btn.getAttribute("data-dienst-loeschen");
+          var inBenutzung = klasse.dienstplanWochen.some(function (w) { return w.zuteilung[id] && w.zuteilung[id].length > 0; });
+          if (inBenutzung) { alert("Dieser Dienst wurde schon mindestens einer Woche zugeteilt und kann nicht gelöscht werden."); return; }
+          klasse.dienste = klasse.dienste.filter(function (d) { return d.id !== id; });
+          speichereZustand();
+          dlg.querySelector("#d-dienste-liste").innerHTML = zeilenHtml();
+          bindeLoeschen();
+        });
+      });
+    }
+    bindeLoeschen();
+
+    dlg.querySelector("#d-dienst-anlegen").addEventListener("click", function () {
+      var name = dlg.querySelector("#d-dienst-name").value.trim();
+      var anzahl = parseInt(dlg.querySelector("#d-dienst-anzahl").value, 10) || 1;
+      if (!name) return;
+      klasse.dienste.push({ id: neueId(), name: name, anzahl: anzahl });
+      speichereZustand();
+      dlg.querySelector("#d-dienste-liste").innerHTML = zeilenHtml();
+      bindeLoeschen();
+      dlg.querySelector("#d-dienst-name").value = "";
+    });
+
+    dlg.querySelector("#d-schliessen").addEventListener("click", function () { dlg.close(); render(); });
+  }
+
   function dialogKlasseBeobachtungen(klasse) {
     if (klasse.schueler.length === 0) { alert("Diese Klasse hat noch keine Schüler."); return; }
     var dlg = oeffneDialog(
@@ -1809,12 +2059,29 @@
       });
     });
 
+    if (klasse && ui.ansicht === "dienstplan") {
+      var diensteVerwaltenBtn = document.getElementById("dienste-verwalten-btn");
+      if (diensteVerwaltenBtn) diensteVerwaltenBtn.addEventListener("click", function () { dialogDiensteVerwalten(klasse); });
+      var neueDienstwocheBtn = document.getElementById("neue-dienstwoche-btn");
+      if (neueDienstwocheBtn) neueDienstwocheBtn.addEventListener("click", function () { generiereDienstwoche(klasse); });
+      var letzteDienstwocheLoeschenBtn = document.getElementById("letzte-dienstwoche-loeschen-btn");
+      if (letzteDienstwocheLoeschenBtn) letzteDienstwocheLoeschenBtn.addEventListener("click", function () {
+        if (!confirm("Die zuletzt gewürfelte Woche wieder löschen?")) return;
+        klasse.dienstplanWochen.pop();
+        speichereZustand(); render();
+      });
+      var dienstplanDruckenBtn = document.getElementById("dienstplan-drucken-btn");
+      if (dienstplanDruckenBtn) dienstplanDruckenBtn.addEventListener("click", function () { window.print(); });
+    }
+
     if (!klasse || ui.ansicht !== "klasse") return;
 
     var schuelerBtn = document.getElementById("schueler-verwalten-btn");
     if (schuelerBtn) schuelerBtn.addEventListener("click", function () { dialogSchuelerVerwalten(klasse); });
     var beobachtungenBtn = document.getElementById("beobachtungen-btn");
     if (beobachtungenBtn) beobachtungenBtn.addEventListener("click", function () { dialogKlasseBeobachtungen(klasse); });
+    var dienstplanBtn = document.getElementById("dienstplan-btn");
+    if (dienstplanBtn) dienstplanBtn.addEventListener("click", function () { ui.ansicht = "dienstplan"; render(); });
     var leeresFachSchuelerBtn = document.getElementById("leeres-fach-schueler-btn");
     if (leeresFachSchuelerBtn) leeresFachSchuelerBtn.addEventListener("click", function () { dialogSchuelerVerwalten(klasse); });
     var umbenennenBtn = document.getElementById("klasse-umbenennen-btn");
