@@ -1131,6 +1131,7 @@
       '<h3>' + formatDatumLang(periode.von) + ' &ndash; ' + formatDatumLang(periode.bis) +
       (periode.manuell ? ' <span class="dienstwoche-badge">manuell</span>' : '') +
       '<span class="dienstwoche-aktionen druck-ausblenden">' +
+        '<button class="dienstwoche-aktion-btn" data-periode-drucken="' + periode.id + '">Drucken</button>' +
         '<button class="dienstwoche-aktion-btn" data-periode-bearbeiten="' + periode.id + '">Bearbeiten</button>' +
         '<button class="dienstwoche-aktion-btn" data-periode-loeschen="' + periode.id + '">Löschen</button>' +
       '</span></h3>' +
@@ -1179,10 +1180,24 @@
       });
     }
 
-    html += '<h2 class="dienstplan-verlauf-titel">Übersicht: wer hat was schon gemacht</h2>';
-    html += renderDienstUebersichtsTabelle(klasse, stats);
+    html += '<div id="dienstplan-verlauf-bereich"><h2 class="dienstplan-verlauf-titel">Übersicht: wer hat was schon gemacht</h2>' +
+      renderDienstUebersichtsTabelle(klasse, stats) + '</div>';
 
     return html;
+  }
+
+  function druckeEinzelnePeriode(periode) {
+    var stil = document.createElement("style");
+    stil.id = "druck-einzelperiode-stil";
+    stil.textContent = "@media print { .dienstwoche-karte, .dienstplan-kalender, #dienstplan-verlauf-bereich { display: none !important; } #periode-" + periode.id + " { display: block !important; } }";
+    document.head.appendChild(stil);
+    var aufraeumen = function () {
+      var alt = document.getElementById("druck-einzelperiode-stil");
+      if (alt) alt.remove();
+      window.removeEventListener("afterprint", aufraeumen);
+    };
+    window.addEventListener("afterprint", aufraeumen);
+    window.print();
   }
 
   function renderKlasse(klasse, fach) {
@@ -2309,6 +2324,12 @@
       if (periodenGenerierenBtn) periodenGenerierenBtn.addEventListener("click", function () { dialogPeriodenGenerieren(klasse); });
       var dienstplanDruckenBtn = document.getElementById("dienstplan-drucken-btn");
       if (dienstplanDruckenBtn) dienstplanDruckenBtn.addEventListener("click", function () { window.print(); });
+      document.querySelectorAll("[data-periode-drucken]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var periode = klasse.dienstplanPerioden.filter(function (p) { return p.id === btn.getAttribute("data-periode-drucken"); })[0];
+          if (periode) druckeEinzelnePeriode(periode);
+        });
+      });
       document.querySelectorAll("[data-periode-bearbeiten]").forEach(function (btn) {
         btn.addEventListener("click", function () {
           var periode = klasse.dienstplanPerioden.filter(function (p) { return p.id === btn.getAttribute("data-periode-bearbeiten"); })[0];
