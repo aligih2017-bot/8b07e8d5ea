@@ -747,17 +747,42 @@
     return zuteilung;
   }
 
+  var MIN_PERIODE_TAGE = 3;
+
+  function findeFerienImZeitraum(vonExklusiv, bisInklusiv) {
+    var treffer = BAYERN_FERIEN.filter(function (f) { return f.start > vonExklusiv && f.start <= bisInklusiv; });
+    treffer.sort(function (a, b) { return a.start < b.start ? -1 : 1; });
+    return treffer[0] || null;
+  }
+
   function generierePerioden(klasse, vonDatum, endeDatumExklusiv) {
     if (klasse.schueler.length === 0) { alert("Diese Klasse hat noch keine Schüler."); return; }
     if (klasse.dienste.length === 0) { alert("Lege zuerst mindestens einen Dienst an."); return; }
     if (vonDatum >= endeDatumExklusiv) { alert("Das Startdatum liegt nicht vor dem Ende (Sommerferien)."); return; }
     var aktuellesVon = vonDatum;
+    var letztePeriodeDiesesLaufs = null;
     while (aktuellesVon < endeDatumExklusiv) {
-      var aktuellesBis = addiereTage(aktuellesVon, 13);
-      var stats = dienstplanStatistik(klasse);
-      var zuteilung = erzeugePeriodenZuteilung(klasse, stats);
-      klasse.dienstplanPerioden.push({ id: neueId(), von: aktuellesVon, bis: aktuellesBis, zuteilung: zuteilung, manuell: false });
-      aktuellesVon = addiereTage(aktuellesBis, 1);
+      var ferienAmStart = ferienAmTag(aktuellesVon);
+      if (ferienAmStart) { aktuellesVon = addiereTage(ferienAmStart.ende, 1); continue; }
+
+      var normalesBis = addiereTage(aktuellesVon, 13);
+      var ferienImSpan = findeFerienImZeitraum(aktuellesVon, normalesBis);
+      var tatsaechlichesBis = ferienImSpan ? addiereTage(ferienImSpan.start, -1) : normalesBis;
+      var periodenLaenge = tageDiff(aktuellesVon, tatsaechlichesBis) + 1;
+
+      if (ferienImSpan && periodenLaenge <= MIN_PERIODE_TAGE && letztePeriodeDiesesLaufs) {
+        letztePeriodeDiesesLaufs.bis = tatsaechlichesBis;
+      } else {
+        var stats = dienstplanStatistik(klasse);
+        var zuteilung = erzeugePeriodenZuteilung(klasse, stats);
+        var neuePeriode = { id: neueId(), von: aktuellesVon, bis: tatsaechlichesBis, zuteilung: zuteilung, manuell: false };
+        klasse.dienstplanPerioden.push(neuePeriode);
+        letztePeriodeDiesesLaufs = neuePeriode;
+      }
+
+      var naechsterKandidat = addiereTage(tatsaechlichesBis, 1);
+      var ferienAmKandidat = ferienAmTag(naechsterKandidat);
+      aktuellesVon = ferienAmKandidat ? addiereTage(ferienAmKandidat.ende, 1) : naechsterKandidat;
     }
     speichereZustand();
     render();
