@@ -270,10 +270,23 @@
   .typen-zeile button { background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px 6px; border-radius: 6px; font-size: 0.8rem; }
   .typen-zeile button:hover { color: var(--danger); background: var(--danger-tint); }
 
-  .dienstwoche-karte { margin-bottom: 20px; }
-  .dienstwoche-karte h3 { font-size: 1rem; margin: 0 0 8px; display: flex; align-items: baseline; gap: 10px; }
+  .dienstwoche-karte { margin-bottom: 20px; scroll-margin-top: 16px; }
+  .dienstwoche-karte h3 { font-size: 1rem; margin: 0 0 8px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
   .dienstwoche-datum { font-size: 0.76rem; font-weight: 400; color: var(--muted); }
-  .dienstwoche-aktuell .dienstplan-tabelle { border-color: var(--accent); }
+  .dienstwoche-aktuell .dienstplan-tabelle { border-color: var(--accent); border-width: 2px; }
+  .dienstwoche-badge { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); background: var(--surface-2); border-radius: 999px; padding: 2px 8px; }
+  .dienstwoche-aktionen { margin-left: auto; display: flex; gap: 4px; }
+  .dienstwoche-aktion-btn { background: none; border: 1px solid var(--border); color: var(--muted); cursor: pointer; font-size: 0.72rem; padding: 3px 8px; border-radius: 6px; }
+  .dienstwoche-aktion-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .dienst-slot-reihe { display: flex; flex-wrap: wrap; gap: 6px; }
+  .dienst-slot-reihe select { padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--ink); font-family: var(--sans); font-size: 0.84rem; }
+  .dienstplan-kalender { margin-bottom: 26px; }
+  .dienstplan-mini-monat { cursor: default; }
+  .dienstplan-mini-monat:hover { border-color: var(--border); }
+  .mini-tag.dienstplan-periode-0 { background: var(--accent-tint); }
+  .mini-tag.dienstplan-periode-1 { background: var(--surface-2); }
+  a.mini-tag { text-decoration: none; display: block; cursor: pointer; }
+  a.mini-tag:hover { outline: 1.5px solid var(--accent); outline-offset: -1px; }
   table.dienstplan-tabelle { border-collapse: collapse; width: 100%; font-size: 0.86rem; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
   table.dienstplan-tabelle th, table.dienstplan-tabelle td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
   table.dienstplan-tabelle thead th { font-weight: 600; background: var(--surface-2); }
@@ -528,7 +541,7 @@
   zustand.klassen.forEach(function (k) {
     k.schueler.forEach(function (s) { if (!s.notizen) s.notizen = []; });
     if (!k.dienste) k.dienste = STANDARD_DIENSTE.map(function (d) { return { id: neueId(), name: d.name, anzahl: d.anzahl }; });
-    if (!k.dienstplanWochen) k.dienstplanWochen = [];
+    if (!k.dienstplanPerioden) k.dienstplanPerioden = [];
   });
   var heute = new Date();
   var ui = { klasseId: null, fachId: null, ansicht: "klasse", kalenderJahr: heute.getFullYear(), kalenderMonat: heute.getMonth(), kalenderModus: "monat" };
@@ -632,20 +645,30 @@
     return summe;
   }
 
+  function addiereTage(iso, anzahl) {
+    var d = new Date(iso + "T00:00:00");
+    d.setDate(d.getDate() + anzahl);
+    return datumZuIso(d);
+  }
+
+  function sortiertePerioden(klasse) {
+    return klasse.dienstplanPerioden.slice().sort(function (a, b) { return a.von < b.von ? -1 : (a.von > b.von ? 1 : 0); });
+  }
+
   function dienstplanStatistik(klasse) {
     var stats = {};
     klasse.schueler.forEach(function (s) {
       stats[s.id] = { proDienst: {}, urlaubCount: 0, letzteDienstId: null, partner: {} };
       klasse.dienste.forEach(function (d) { stats[s.id].proDienst[d.id] = 0; });
     });
-    klasse.dienstplanWochen.forEach(function (woche) {
-      var werHatteDieseWoche = {};
+    sortiertePerioden(klasse).forEach(function (periode) {
+      var werHatteDiesePeriode = {};
       klasse.dienste.forEach(function (d) {
-        var ids = woche.zuteilung[d.id] || [];
+        var ids = periode.zuteilung[d.id] || [];
         ids.forEach(function (sid) {
           if (!stats[sid]) return;
           stats[sid].proDienst[d.id] = (stats[sid].proDienst[d.id] || 0) + 1;
-          werHatteDieseWoche[sid] = d.id;
+          werHatteDiesePeriode[sid] = d.id;
           ids.forEach(function (andererId) {
             if (andererId === sid) return;
             stats[sid].partner[andererId] = (stats[sid].partner[andererId] || 0) + 1;
@@ -653,8 +676,8 @@
         });
       });
       klasse.schueler.forEach(function (s) {
-        stats[s.id].letzteDienstId = werHatteDieseWoche[s.id] || null;
-        if (!werHatteDieseWoche[s.id]) stats[s.id].urlaubCount++;
+        stats[s.id].letzteDienstId = werHatteDiesePeriode[s.id] || null;
+        if (!werHatteDiesePeriode[s.id]) stats[s.id].urlaubCount++;
       });
     });
     return stats;
@@ -685,10 +708,7 @@
     return besteKombi;
   }
 
-  function generiereDienstwoche(klasse) {
-    if (klasse.schueler.length === 0) { alert("Diese Klasse hat noch keine Schüler."); return; }
-    if (klasse.dienste.length === 0) { alert("Lege zuerst mindestens einen Dienst an."); return; }
-    var stats = dienstplanStatistik(klasse);
+  function erzeugePeriodenZuteilung(klasse, stats) {
     var verfuegbar = klasse.schueler.slice();
     for (var i = verfuegbar.length - 1; i > 0; i--) {
       var j = Math.floor(Math.random() * (i + 1));
@@ -696,14 +716,14 @@
     }
 
     var zuteilung = {};
-    var zugewiesenDieseWoche = {};
+    var zugewiesenDiesePeriode = {};
 
     klasse.dienste.forEach(function (d) {
       var kandidaten = verfuegbar.filter(function (s) {
-        return !zugewiesenDieseWoche[s.id] && stats[s.id].letzteDienstId !== d.id;
+        return !zugewiesenDiesePeriode[s.id] && stats[s.id].letzteDienstId !== d.id;
       });
       if (kandidaten.length < d.anzahl) {
-        kandidaten = verfuegbar.filter(function (s) { return !zugewiesenDieseWoche[s.id]; });
+        kandidaten = verfuegbar.filter(function (s) { return !zugewiesenDiesePeriode[s.id]; });
       }
       kandidaten.sort(function (a, b) {
         var sa = stats[a.id], sb = stats[b.id];
@@ -721,10 +741,24 @@
       var ausgewaehlt = besteDienstKombination(pool, anzahlZuWaehlen, stats);
 
       zuteilung[d.id] = ausgewaehlt.map(function (s) { return s.id; });
-      ausgewaehlt.forEach(function (s) { zugewiesenDieseWoche[s.id] = true; });
+      ausgewaehlt.forEach(function (s) { zugewiesenDiesePeriode[s.id] = true; });
     });
 
-    klasse.dienstplanWochen.push({ id: neueId(), erstelltAm: heuteIso(), zuteilung: zuteilung });
+    return zuteilung;
+  }
+
+  function generierePerioden(klasse, vonDatum, endeDatumExklusiv) {
+    if (klasse.schueler.length === 0) { alert("Diese Klasse hat noch keine Schüler."); return; }
+    if (klasse.dienste.length === 0) { alert("Lege zuerst mindestens einen Dienst an."); return; }
+    if (vonDatum >= endeDatumExklusiv) { alert("Das Startdatum liegt nicht vor dem Ende (Sommerferien)."); return; }
+    var aktuellesVon = vonDatum;
+    while (aktuellesVon < endeDatumExklusiv) {
+      var aktuellesBis = addiereTage(aktuellesVon, 13);
+      var stats = dienstplanStatistik(klasse);
+      var zuteilung = erzeugePeriodenZuteilung(klasse, stats);
+      klasse.dienstplanPerioden.push({ id: neueId(), von: aktuellesVon, bis: aktuellesBis, zuteilung: zuteilung, manuell: false });
+      aktuellesVon = addiereTage(aktuellesBis, 1);
+    }
     speichereZustand();
     render();
   }
@@ -958,10 +992,61 @@
     return html;
   }
 
-  function renderDienstwocheTabelle(klasse, woche, wochenNummer, istAktuell) {
+  function findePeriodeIndexFuerTag(perioden, iso) {
+    for (var i = 0; i < perioden.length; i++) {
+      if (iso >= perioden[i].von && iso <= perioden[i].bis) return i;
+    }
+    return -1;
+  }
+
+  function renderDienstplanMiniMonat(jahr, monat, perioden) {
+    var ersterTag = new Date(jahr, monat, 1);
+    var anzahlTage = new Date(jahr, monat + 1, 0).getDate();
+    var startOffset = (ersterTag.getDay() + 6) % 7;
+    var html = '<div class="mini-monat dienstplan-mini-monat"><h3>' + MONATSNAMEN[monat] + ' ' + jahr + '</h3><div class="mini-grid">';
+    WOCHENTAGE.forEach(function (w) { html += '<span class="mini-wd">' + w.charAt(0) + '</span>'; });
+    for (var i = 0; i < startOffset; i++) html += '<span class="mini-tag leer"></span>';
+    for (var tag = 1; tag <= anzahlTage; tag++) {
+      var iso = jahr + "-" + String(monat + 1).padStart(2, "0") + "-" + String(tag).padStart(2, "0");
+      var ferien = ferienAmTag(iso);
+      var wIdx = (startOffset + tag - 1) % 7;
+      var we = wIdx === 5 || wIdx === 6;
+      var istHeute = iso === heuteIso();
+      var periodeIdx = findePeriodeIndexFuerTag(perioden, iso);
+      var periodeKlasse = (!ferien && !we && periodeIdx >= 0) ? " dienstplan-periode-" + (periodeIdx % 2) : "";
+      var klassen = "mini-tag" + (ferien ? " ferien" : "") + (we ? " wochenende" : "") + periodeKlasse + (istHeute ? " heute" : "");
+      if (periodeIdx >= 0) {
+        html += '<a class="' + klassen + '" href="#periode-' + perioden[periodeIdx].id + '">' + tag + '</a>';
+      } else {
+        html += '<span class="' + klassen + '">' + tag + '</span>';
+      }
+    }
+    html += '</div></div>';
+    return html;
+  }
+
+  function renderDienstplanKalenderUebersicht(klasse, perioden) {
+    if (perioden.length === 0) return "";
+    var ersterTag = new Date(perioden[0].von + "T00:00:00");
+    var letzterTag = new Date(perioden[perioden.length - 1].bis + "T00:00:00");
+    var html = '<div class="jahr-grid dienstplan-kalender druck-ausblenden">';
+    var jahr = ersterTag.getFullYear(), monat = ersterTag.getMonth();
+    var endJahr = letzterTag.getFullYear(), endMonat = letzterTag.getMonth();
+    var sicherheitszaehler = 0;
+    while ((jahr < endJahr || (jahr === endJahr && monat <= endMonat)) && sicherheitszaehler < 36) {
+      html += renderDienstplanMiniMonat(jahr, monat, perioden);
+      monat++;
+      if (monat > 11) { monat = 0; jahr++; }
+      sicherheitszaehler++;
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function renderPeriodeKarte(klasse, periode, istAktuell) {
     var zugewiesenIds = {};
     var zeilen = klasse.dienste.map(function (d) {
-      var ids = woche.zuteilung[d.id] || [];
+      var ids = periode.zuteilung[d.id] || [];
       ids.forEach(function (id) { zugewiesenIds[id] = true; });
       var namen = ids.map(function (id) {
         var s = findeSchueler(klasse, id);
@@ -973,8 +1058,13 @@
     var urlaubNamen = klasse.schueler.filter(function (s) { return !zugewiesenIds[s.id]; })
       .map(function (s) { return escapeHtml(s.name || "(ohne Namen)"); }).join(", ") || "–";
 
-    return '<div class="dienstwoche-karte' + (istAktuell ? ' dienstwoche-aktuell' : '') + '">' +
-      '<h3>Woche ' + wochenNummer + (woche.erstelltAm ? ' <span class="dienstwoche-datum">erstellt am ' + formatDatumLang(woche.erstelltAm) + '</span>' : '') + '</h3>' +
+    return '<div class="dienstwoche-karte' + (istAktuell ? ' dienstwoche-aktuell' : '') + '" id="periode-' + periode.id + '">' +
+      '<h3>' + formatDatumLang(periode.von) + ' &ndash; ' + formatDatumLang(periode.bis) +
+      (periode.manuell ? ' <span class="dienstwoche-badge">manuell</span>' : '') +
+      '<span class="dienstwoche-aktionen druck-ausblenden">' +
+        '<button class="dienstwoche-aktion-btn" data-periode-bearbeiten="' + periode.id + '">Bearbeiten</button>' +
+        '<button class="dienstwoche-aktion-btn" data-periode-loeschen="' + periode.id + '">Löschen</button>' +
+      '</span></h3>' +
       '<table class="dienstplan-tabelle"><thead><tr><th>Dienst</th><th>Wer</th></tr></thead><tbody>' +
       zeilen +
       '<tr class="dienstplan-urlaub-zeile"><td>Urlaub</td><td>' + urlaubNamen + '</td></tr>' +
@@ -999,27 +1089,25 @@
 
   function renderDienstplan(klasse) {
     var stats = dienstplanStatistik(klasse);
-    var wochen = klasse.dienstplanWochen;
+    var perioden = sortiertePerioden(klasse);
+    var heute = heuteIso();
 
     var html = '<div class="klasse-kopf"><h1>Dienstplan &ndash; ' + escapeHtml(klasse.name) + '</h1>' +
       '<div class="klasse-kopf-aktionen druck-ausblenden">' +
       '<button class="btn btn-ghost btn-sm" id="dienste-verwalten-btn">Dienste verwalten</button>' +
-      '<button class="btn btn-primary btn-sm" id="neue-dienstwoche-btn">Neue Woche würfeln</button>' +
-      (wochen.length > 0 ? '<button class="btn btn-danger-ghost btn-sm" id="letzte-dienstwoche-loeschen-btn">Letzte Woche löschen</button>' : '') +
+      '<button class="btn btn-ghost btn-sm" id="periode-manuell-btn">Periode manuell eintragen</button>' +
+      '<button class="btn btn-primary btn-sm" id="perioden-generieren-btn">Automatisch generieren</button>' +
       '<button class="btn btn-ghost btn-sm" id="dienstplan-drucken-btn">Drucken</button>' +
       '</div></div>';
 
-    if (wochen.length === 0) {
-      html += '<p style="color:var(--muted);">Noch kein Dienstplan erstellt. "Neue Woche würfeln" verteilt die Dienste fair &ndash; jedes Kind bekommt im Laufe des Schuljahrs jeden Dienst mindestens einmal, nicht zweimal hintereinander denselben, und Gruppen wechseln sich ab.</p>';
+    if (perioden.length === 0) {
+      html += '<p style="color:var(--muted);">Noch kein Dienstplan erstellt. Trage zuerst bereits vergangene Perioden manuell ein (falls es welche gibt) und nutze dann "Automatisch generieren", um den Rest des Schuljahrs bis zu den Sommerferien 2027 in 2-Wochen-Perioden fair zu verteilen.</p>';
     } else {
-      html += renderDienstwocheTabelle(klasse, wochen[wochen.length - 1], wochen.length, true);
-    }
-
-    if (wochen.length > 1) {
-      html += '<h2 class="dienstplan-verlauf-titel druck-ausblenden">Frühere Wochen</h2>';
-      for (var i = wochen.length - 2; i >= 0; i--) {
-        html += renderDienstwocheTabelle(klasse, wochen[i], i + 1, false);
-      }
+      html += renderDienstplanKalenderUebersicht(klasse, perioden);
+      perioden.forEach(function (p) {
+        var istAktuell = heute >= p.von && heute <= p.bis;
+        html += renderPeriodeKarte(klasse, p, istAktuell);
+      });
     }
 
     html += '<h2 class="dienstplan-verlauf-titel">Übersicht: wer hat was schon gemacht</h2>';
@@ -1249,7 +1337,7 @@
       if (!name) return;
       var neu = { id: neueId(), name: name, schueler: [], faecher: [],
         dienste: STANDARD_DIENSTE.map(function (d) { return { id: neueId(), name: d.name, anzahl: d.anzahl }; }),
-        dienstplanWochen: [] };
+        dienstplanPerioden: [] };
       zustand.klassen.push(neu);
       speichereZustand();
       ui.klasseId = neu.id; ui.fachId = null; ui.ansicht = "klasse";
@@ -1819,8 +1907,8 @@
       dlg.querySelectorAll("[data-dienst-loeschen]").forEach(function (btn) {
         btn.addEventListener("click", function () {
           var id = btn.getAttribute("data-dienst-loeschen");
-          var inBenutzung = klasse.dienstplanWochen.some(function (w) { return w.zuteilung[id] && w.zuteilung[id].length > 0; });
-          if (inBenutzung) { alert("Dieser Dienst wurde schon mindestens einer Woche zugeteilt und kann nicht gelöscht werden."); return; }
+          var inBenutzung = klasse.dienstplanPerioden.some(function (w) { return w.zuteilung[id] && w.zuteilung[id].length > 0; });
+          if (inBenutzung) { alert("Dieser Dienst wurde schon mindestens einer Periode zugeteilt und kann nicht gelöscht werden."); return; }
           klasse.dienste = klasse.dienste.filter(function (d) { return d.id !== id; });
           speichereZustand();
           dlg.querySelector("#d-dienste-liste").innerHTML = zeilenHtml();
@@ -1842,6 +1930,90 @@
     });
 
     dlg.querySelector("#d-schliessen").addEventListener("click", function () { dlg.close(); render(); });
+  }
+
+  function dialogPeriodeManuellEintragen(klasse, bestehendePeriode) {
+    function slotsHtml() {
+      return klasse.dienste.map(function (d) {
+        var slots = "";
+        for (var i = 0; i < d.anzahl; i++) {
+          var vorbelegt = bestehendePeriode ? (bestehendePeriode.zuteilung[d.id] || [])[i] : null;
+          slots += '<select data-dienst-slot="' + d.id + '">' +
+            '<option value="">–</option>' +
+            klasse.schueler.map(function (s) {
+              return '<option value="' + s.id + '"' + (vorbelegt === s.id ? ' selected' : '') + '>' + escapeHtml(s.name || "(ohne Namen)") + '</option>';
+            }).join("") +
+            '</select>';
+        }
+        return '<div class="feld"><label>' + escapeHtml(d.name) + ' (' + d.anzahl + (d.anzahl === 1 ? ' Kind' : ' Kinder') + ')</label>' +
+          '<div class="dienst-slot-reihe">' + slots + '</div></div>';
+      }).join("");
+    }
+
+    var vonStandard = bestehendePeriode ? bestehendePeriode.von : heuteIso();
+    var dlg = oeffneDialog(
+      '<h2>' + (bestehendePeriode ? "Periode bearbeiten" : "Periode manuell eintragen") + '</h2>' +
+      '<div class="feld"><label for="d-von">Von (Montag)</label><input type="date" id="d-von" value="' + vonStandard + '"></div>' +
+      '<p style="color:var(--muted);font-size:0.82rem;margin:-6px 0 14px;">Bis: <span id="d-bis-anzeige">' + formatDatumLang(addiereTage(vonStandard, 13)) + '</span> (2 Wochen)</p>' +
+      slotsHtml() +
+      '<div class="dialog-aktionen">' +
+        (bestehendePeriode ? '<button class="btn btn-danger-ghost" id="d-loeschen">Löschen</button>' : '') +
+        '<button class="btn btn-ghost" id="d-abbrechen">Abbrechen</button><button class="btn btn-primary" id="d-speichern">Speichern</button></div>'
+    );
+
+    dlg.querySelector("#d-von").addEventListener("input", function (e) {
+      if (e.target.value) dlg.querySelector("#d-bis-anzeige").textContent = formatDatumLang(addiereTage(e.target.value, 13));
+    });
+
+    dlg.querySelector("#d-abbrechen").addEventListener("click", function () { dlg.close(); });
+    var loeschenBtn = dlg.querySelector("#d-loeschen");
+    if (loeschenBtn) loeschenBtn.addEventListener("click", function () {
+      if (!confirm("Diese Periode löschen?")) return;
+      klasse.dienstplanPerioden = klasse.dienstplanPerioden.filter(function (p) { return p.id !== bestehendePeriode.id; });
+      speichereZustand();
+      dlg.close(); render();
+    });
+
+    dlg.querySelector("#d-speichern").addEventListener("click", function () {
+      var von = dlg.querySelector("#d-von").value;
+      if (!von) { alert("Bitte ein Startdatum wählen."); return; }
+      var bis = addiereTage(von, 13);
+      var zuteilung = {};
+      klasse.dienste.forEach(function (d) { zuteilung[d.id] = []; });
+      dlg.querySelectorAll("[data-dienst-slot]").forEach(function (sel) {
+        if (sel.value) zuteilung[sel.getAttribute("data-dienst-slot")].push(sel.value);
+      });
+      if (bestehendePeriode) {
+        bestehendePeriode.von = von; bestehendePeriode.bis = bis; bestehendePeriode.zuteilung = zuteilung;
+      } else {
+        klasse.dienstplanPerioden.push({ id: neueId(), von: von, bis: bis, zuteilung: zuteilung, manuell: true });
+      }
+      speichereZustand();
+      dlg.close(); render();
+    });
+  }
+
+  function dialogPeriodenGenerieren(klasse) {
+    var perioden = sortiertePerioden(klasse);
+    var letztePeriode = perioden[perioden.length - 1];
+    var vorschlagVon = letztePeriode ? addiereTage(letztePeriode.bis, 1) : "2026-11-23";
+    var sommerferien = BAYERN_FERIEN.filter(function (f) { return f.name === "Sommerferien 2027"; })[0];
+    var endeDatum = sommerferien ? sommerferien.start : "2027-08-02";
+
+    var dlg = oeffneDialog(
+      '<h2>Automatisch generieren</h2>' +
+      '<p style="color:var(--muted);font-size:0.86rem;margin-bottom:14px;">Verteilt alle Dienste fair in 2-Wochen-Perioden, beginnend ab dem gewählten Datum, bis zum Beginn der Sommerferien 2027 (' + formatDatumLang(endeDatum) + ').</p>' +
+      '<div class="feld"><label for="d-von">Erste Periode beginnt am (Montag)</label><input type="date" id="d-von" value="' + vorschlagVon + '"></div>' +
+      '<div class="dialog-aktionen"><button class="btn btn-ghost" id="d-abbrechen">Abbrechen</button><button class="btn btn-primary" id="d-generieren">Generieren</button></div>'
+    );
+
+    dlg.querySelector("#d-abbrechen").addEventListener("click", function () { dlg.close(); });
+    dlg.querySelector("#d-generieren").addEventListener("click", function () {
+      var von = dlg.querySelector("#d-von").value;
+      if (!von) { alert("Bitte ein Startdatum wählen."); return; }
+      dlg.close();
+      generierePerioden(klasse, von, endeDatum);
+    });
   }
 
   function dialogKlasseBeobachtungen(klasse) {
@@ -2062,16 +2234,26 @@
     if (klasse && ui.ansicht === "dienstplan") {
       var diensteVerwaltenBtn = document.getElementById("dienste-verwalten-btn");
       if (diensteVerwaltenBtn) diensteVerwaltenBtn.addEventListener("click", function () { dialogDiensteVerwalten(klasse); });
-      var neueDienstwocheBtn = document.getElementById("neue-dienstwoche-btn");
-      if (neueDienstwocheBtn) neueDienstwocheBtn.addEventListener("click", function () { generiereDienstwoche(klasse); });
-      var letzteDienstwocheLoeschenBtn = document.getElementById("letzte-dienstwoche-loeschen-btn");
-      if (letzteDienstwocheLoeschenBtn) letzteDienstwocheLoeschenBtn.addEventListener("click", function () {
-        if (!confirm("Die zuletzt gewürfelte Woche wieder löschen?")) return;
-        klasse.dienstplanWochen.pop();
-        speichereZustand(); render();
-      });
+      var periodeManuellBtn = document.getElementById("periode-manuell-btn");
+      if (periodeManuellBtn) periodeManuellBtn.addEventListener("click", function () { dialogPeriodeManuellEintragen(klasse); });
+      var periodenGenerierenBtn = document.getElementById("perioden-generieren-btn");
+      if (periodenGenerierenBtn) periodenGenerierenBtn.addEventListener("click", function () { dialogPeriodenGenerieren(klasse); });
       var dienstplanDruckenBtn = document.getElementById("dienstplan-drucken-btn");
       if (dienstplanDruckenBtn) dienstplanDruckenBtn.addEventListener("click", function () { window.print(); });
+      document.querySelectorAll("[data-periode-bearbeiten]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var periode = klasse.dienstplanPerioden.filter(function (p) { return p.id === btn.getAttribute("data-periode-bearbeiten"); })[0];
+          if (periode) dialogPeriodeManuellEintragen(klasse, periode);
+        });
+      });
+      document.querySelectorAll("[data-periode-loeschen]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var id = btn.getAttribute("data-periode-loeschen");
+          if (!confirm("Diese Periode löschen?")) return;
+          klasse.dienstplanPerioden = klasse.dienstplanPerioden.filter(function (p) { return p.id !== id; });
+          speichereZustand(); render();
+        });
+      });
     }
 
     if (!klasse || ui.ansicht !== "klasse") return;
