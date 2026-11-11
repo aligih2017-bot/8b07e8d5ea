@@ -543,6 +543,7 @@
     if (!k.dienste) k.dienste = STANDARD_DIENSTE.map(function (d) { return { id: neueId(), name: d.name, anzahl: d.anzahl }; });
     if (!k.dienstplanPerioden) k.dienstplanPerioden = [];
   });
+  reparierePeriodenNachFerienRegel();
   var heute = new Date();
   var ui = { klasseId: null, fachId: null, ansicht: "klasse", kalenderJahr: heute.getFullYear(), kalenderMonat: heute.getMonth(), kalenderModus: "monat" };
 
@@ -755,10 +756,7 @@
     return treffer[0] || null;
   }
 
-  function generierePerioden(klasse, vonDatum, endeDatumExklusiv) {
-    if (klasse.schueler.length === 0) { alert("Diese Klasse hat noch keine Schüler."); return; }
-    if (klasse.dienste.length === 0) { alert("Lege zuerst mindestens einen Dienst an."); return; }
-    if (vonDatum >= endeDatumExklusiv) { alert("Das Startdatum liegt nicht vor dem Ende (Sommerferien)."); return; }
+  function generierePeriodenKern(klasse, vonDatum, endeDatumExklusiv) {
     var aktuellesVon = vonDatum;
     var letztePeriodeDiesesLaufs = null;
     while (aktuellesVon < endeDatumExklusiv) {
@@ -784,8 +782,54 @@
       var ferienAmKandidat = ferienAmTag(naechsterKandidat);
       aktuellesVon = ferienAmKandidat ? addiereTage(ferienAmKandidat.ende, 1) : naechsterKandidat;
     }
+  }
+
+  function generierePerioden(klasse, vonDatum, endeDatumExklusiv) {
+    if (klasse.schueler.length === 0) { alert("Diese Klasse hat noch keine Schüler."); return; }
+    if (klasse.dienste.length === 0) { alert("Lege zuerst mindestens einen Dienst an."); return; }
+    if (vonDatum >= endeDatumExklusiv) { alert("Das Startdatum liegt nicht vor dem Ende (Sommerferien)."); return; }
+    generierePeriodenKern(klasse, vonDatum, endeDatumExklusiv);
     speichereZustand();
     render();
+  }
+
+  function sommerferienEndeDatum() {
+    var sommerferien = BAYERN_FERIEN.filter(function (f) { return f.name === "Sommerferien 2027"; })[0];
+    return sommerferien ? sommerferien.start : "2027-08-02";
+  }
+
+  function reparierePeriodenNachFerienRegel() {
+    var geaendert = false;
+    zustand.klassen.forEach(function (klasse) {
+      if (!klasse.dienstplanPerioden || klasse.dienstplanPerioden.length === 0) return;
+      var perioden = sortiertePerioden(klasse);
+      var ersterFehlerIndex = -1;
+      for (var i = 0; i < perioden.length; i++) {
+        if (!perioden[i].manuell && ferienAmTag(perioden[i].bis)) { ersterFehlerIndex = i; break; }
+      }
+      if (ersterFehlerIndex === -1) return;
+
+      // Eine Periode VOR dem Fehler mit einbeziehen: nur so kann die Zusammenlegungslogik
+      // (kurzer Ferien-Rest wird an die vorherige Periode angehängt) korrekt neu entstehen.
+      var neuStartIndex = ersterFehlerIndex;
+      if (neuStartIndex > 0 && !perioden[neuStartIndex - 1].manuell) neuStartIndex -= 1;
+
+      for (var j = neuStartIndex; j < perioden.length; j++) {
+        if (perioden[j].manuell) return;
+      }
+
+      var neuStartVon = perioden[neuStartIndex].von;
+      var zuEntfernenIds = {};
+      for (var k = neuStartIndex; k < perioden.length; k++) zuEntfernenIds[perioden[k].id] = true;
+      klasse.dienstplanPerioden = klasse.dienstplanPerioden.filter(function (p) { return !zuEntfernenIds[p.id]; });
+
+      var endeDatum = sommerferienEndeDatum();
+      if (neuStartVon < endeDatum) {
+        generierePeriodenKern(klasse, neuStartVon, endeDatum);
+        geaendert = true;
+      }
+    });
+    if (geaendert) speichereZustand();
   }
 
   var app = document.getElementById("app");
